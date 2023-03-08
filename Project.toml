@@ -3,6 +3,11 @@ uuid = "208e7efd-7036-4c82-8b73-3e7ae71c2350"
 authors = ["mauricelanghinrichs <m.langhinrichs@icloud.com>"]
 version = "0.1.0"
 
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+FLoops = "cc61a311-1640-44b5-9fba-1b764f453329"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
 [compat]
 julia = "1.3"
 
