@@ -63,7 +63,7 @@ function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, r
         end
         while (!isfinite(Δs[i])) || (!isfinite(logπ[i]))
             θs[i] = op(float, Particle(rand(trng, prior)))
-            logπ[i] = logpdf(prior, push_p(prior,θs[i].x))
+            logπ[i] = logpdf(prior, push_p(prior, θs[i].x))
             d, blob = dist!(θs[i].x, ve)
             Δs[i] = d
             blobs[i] = blob
@@ -81,8 +81,8 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
 
         ### DE (diffential evolution) move
         # NOTE: as long as "if Δs[i] > ϵ" clause applies the proposal kernel 
-        # is not symmetric as the if clause selects a better particle to replace 
-        # original one in the DE move; non-symmetric proposal is fine, however 
+        # is not symmetric as the if-clause selects a better particle to replace 
+        # the original one in the DE move; non-symmetric proposal is fine, however 
         # it would need to enter the MH step below which it does not; the proposal 
         # becomes only symmetric if the if-clause is not entered anymore (a and b 
         # particles are symmetric), e.g. this happens when all particles are 
@@ -92,28 +92,28 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
         if Δs[i] > ϵ
             # NOTE: Δs .<= Δs[i] is this data race safe? note that nΔs and Δs
             # are not referenced through the identity.() broadcast
-            s=rand(trng,(1:nparticles)[Δs .<= Δs[i]])
+            s=rand(trng, (1:nparticles)[Δs .<= Δs[i]])
         end
         a = s
         while a == s
-            a = rand(trng,1:nparticles)
+            a = rand(trng, 1:nparticles)
         end
         b = a
         while b == a || b == s
-            b = rand(trng,1:nparticles)
+            b = rand(trng, 1:nparticles)
         end
         # θp is a new Particle with new tuple values (.x) [see comment above]
-        θp = op(+,θs[s],op(*,op(-,θs[a],θs[b]), γ))
+        θp = op(+, θs[s], op(*, op(-, θs[a], θs[b]), γ))
 
         ### MH (Metropolis–Hastings) acceptance step
         # NOTE: strictly ratios of prior, ABC kernel (likelihood if available) 
         # and proposal kernel needs to be considered in min{1, ratios} (non-log space);
         # only symmetric proposal kernel with q(θ'|θ)=q(θ|θ') would cancel (see DE move above);
         # ABC kernel can be simplified as below (out of min, into if clause) if simple indicator
-        lπ = logpdf(prior, push_p(prior,θp.x))
+        lπ = logpdf(prior, push_p(prior, θp.x))
         w_prior = lπ - logπ[i] # prior ratio (in log space)
-        log(rand(trng)) > min(0,w_prior) && continue
-        nsims[i]+=1
+        log(rand(trng)) > min(0, w_prior) && continue
+        nsims[i] += 1
         dp, blob = dist!(θp.x, ve)
 
         # NOTE: this "implements" the ABC kernel (indicator here) that is theoretically 
@@ -134,6 +134,7 @@ end
 
 function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0, 
                 verbose=true, rng=Random.GLOBAL_RNG, proposal_width=1.0, ex=ThreadedEx())
+    
     @info("Running abcde! with executor ", typeof(ex))
 
     ### this seems to be initialisation
@@ -141,7 +142,7 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
 
     # draw prior parameters for each particle
     θs =[op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
-    logπ = [logpdf(prior, push_p(prior,θs[i].x)) for i = 1:nparticles]
+    logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i = 1:nparticles]
 
     ve = deepcopy(varexternal)
     d1, blob1 = dist!(θs[1].x, ve)
@@ -152,24 +153,24 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
     ###
 
     ### actual ABC run
-    nsims = zeros(Int,nparticles)
-    γ = proposal_width*2.38/sqrt(2*length(prior))
-    iters=0
-    complete=1-sum(Δs.>ϵ_target)/nparticles
+    nsims = zeros(Int, nparticles)
+    γ = proposal_width * 2.38 / sqrt(2 * length(prior))
+    iters = 0
+    complete = 1 - sum(Δs .> ϵ_target) / nparticles
     while iters<generations
-        iters+=1
+        iters += 1
         # identity.() behaves like deepcopy(), i.e. == is true,
         # === is false (in general, except for immutables which will be true always),
         # so there are n=new object that can be mutated without data races
 
         nθs = identity.(θs) # vector of particles, where θs[i].x are parameters (as tuple)
         nΔs = identity.(Δs) # vector of floats with distance values (model/data)
-        nlogπ=identity.(logπ) # vector of floats with log prior values of above particles
-        nblobs=identity.(blobs) # blobs (some additional data) for each particle
+        nlogπ = identity.(logπ) # vector of floats with log prior values of above particles
+        nblobs = identity.(blobs) # blobs (some additional data) for each particle
 
         # returns minimal and maximal distance/cost
         ϵ_l, ϵ_h = extrema(Δs)
-        ϵ_pop = max(ϵ_target,ϵ_l + α * (ϵ_h - ϵ_l))
+        ϵ_pop = max(ϵ_target, ϵ_l + α * (ϵ_h - ϵ_l))
 
         abcde_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
                             ϵ_pop, ϵ_target, γ, nparticles, nsims, rng, ex, nblobs)
@@ -180,11 +181,11 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
         blobs = nblobs
         ncomplete = 1 - sum(Δs .> ϵ_target) / nparticles
         if verbose && (ncomplete != complete || complete >= (nparticles - 1) / nparticles)
-            @info "Finished run:" completion=ncomplete nsim = sum(nsims) range_ϵ = extrema(Δs)
+            @info "Finished run:" completion = ncomplete nsim = sum(nsims) range_ϵ = extrema(Δs)
         end
-        complete=ncomplete
+        complete = ncomplete
     end
-    conv=maximum(Δs) <= ϵ_target
+    conv = maximum(Δs) <= ϵ_target
     if verbose
         @info "End:" completion = complete converged = conv nsim = sum(nsims) range_ϵ = extrema(Δs)
     end
