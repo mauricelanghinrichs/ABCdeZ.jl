@@ -43,6 +43,12 @@
 # prior pdf or distance functions are called; also in the final reporting 
 # of the samples!
 
+# NOTE: on "γ0 = 2.38 / sqrt(2 * length(prior)), γσ = 1e-5";
+# the values here for the DE proposal move come from 
+# Cajo J. F. Ter Braak and also (with the actual implentation) from 
+# Benjamin E. Nelson et al. (using γ = γ0 * (1+Z)) with a bit of 
+# normal noise as Z~Normal(0,γσ)
+
 function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
     # calculate cost/dist for each particle
     # (re-draw parameters if not finite)
@@ -83,7 +89,7 @@ function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, r
 end
 
 function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
-                    ϵ_pop, ϵ_target, γ, nparticles, nsims, rng, ex, nblobs)
+                    ϵ_pop, ϵ_target, γ0, γσ, nparticles, nsims, rng, ex, nblobs)
     @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
 
@@ -114,7 +120,7 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
             b = rand(trng, 1:nparticles)
         end
         # θp is a new Particle with new tuple values (.x) [see comment above]
-        θp = op(+, θs[s], op(*, op(-, θs[a], θs[b]), γ))
+        θp = op(+, θs[s], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(trng)*γσ) ))
 
         ### MH (Metropolis–Hastings) acceptance step
         # NOTE: strictly ratios of prior, ABC kernel (likelihood if available) 
@@ -143,13 +149,15 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
     end
 end
 
-function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0, 
-                verbose=true, rng=Random.GLOBAL_RNG, proposal_width=1.0, ex=ThreadedEx())
+function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0.0, 
+                verbose=true, rng=Random.GLOBAL_RNG, ex=ThreadedEx())
     
     @info("Running abcde! with executor ", typeof(ex))
 
-    ### this seems to be initialisation
-    @assert 0<=α<1 "α must be in 0 <= α < 1."
+    ### initialisation
+    0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
+    0.0 ≤ ϵ_target || error("ϵ_target must be non-negative")
+    5 ≤ nparticles || error("nparticles must be at least 5")
 
     # draw prior parameters for each particle
     θs =[op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
@@ -165,7 +173,8 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
 
     ### actual ABC run
     nsims = zeros(Int, nparticles)
-    γ = proposal_width * 2.38 / sqrt(2 * length(prior))
+    γ0 = 2.38 / sqrt(2 * length(prior))
+    γσ = 1e-5
     iters = 0
     complete = 1 - sum(Δs .> ϵ_target) / nparticles
     while iters<generations
@@ -184,7 +193,7 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
         ϵ_pop = max(ϵ_target, ϵ_l + α * (ϵ_h - ϵ_l))
 
         abcde_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
-                            ϵ_pop, ϵ_target, γ, nparticles, nsims, rng, ex, nblobs)
+                            ϵ_pop, ϵ_target, γ0, γσ, nparticles, nsims, rng, ex, nblobs)
 
         θs = nθs
         Δs = nΔs
@@ -206,3 +215,4 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
     length(P)==1 && (P=first(P))
     (P=P, C=Particles(Δs), reached_ϵ=conv, blobs=blobs)
 end
+
