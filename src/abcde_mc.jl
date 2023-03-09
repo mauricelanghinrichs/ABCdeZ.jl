@@ -32,6 +32,17 @@
 # use solution like this https://discourse.julialang.org/t/using-floops-jl-to-update-array-counters/58805
 # or this (histogram)? https://juliafolds.github.io/data-parallelism/tutorials/quick-introduction/
 
+# NOTE: on push_p(prior, θs[i].x) (or push_p(prior, θp[i].x)) functionality;
+# this makes sure that the tuple parameters θs[i].x of a particle θs[i] will 
+# be converted to the same value domain as the prior distributions; only makes 
+# a practical difference when DiscreteDistribution's are involved; e.g., 
+# push_p will then convert (1.12131, 3.0) [= θs[i].x] to (1.12131, 3)
+# NOTE (important): particles internally will have continuous values, even 
+# if they are discrete (e.g. 3.123 will be kept), but the push_p/op float 
+# calls (to 3 or 3.0) are always applied to the "outside", i.e. when 
+# prior pdf or distance functions are called; also in the final reporting 
+# of the samples!
+
 function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
     # calculate cost/dist for each particle
     # (re-draw parameters if not finite)
@@ -57,14 +68,14 @@ function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, r
         ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
 
         if isfinite(logπ[i])
-            d, blob = dist!(θs[i].x, ve)
+            d, blob = dist!(push_p(prior, θs[i].x), ve)
             Δs[i] = d
             blobs[i] = blob
         end
         while (!isfinite(Δs[i])) || (!isfinite(logπ[i]))
             θs[i] = op(float, Particle(rand(trng, prior)))
             logπ[i] = logpdf(prior, push_p(prior, θs[i].x))
-            d, blob = dist!(θs[i].x, ve)
+            d, blob = dist!(push_p(prior, θs[i].x), ve)
             Δs[i] = d
             blobs[i] = blob
         end
@@ -114,7 +125,7 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
         w_prior = lπ - logπ[i] # prior ratio (in log space)
         log(rand(trng)) > min(0, w_prior) && continue
         nsims[i] += 1
-        dp, blob = dist!(θp.x, ve)
+        dp, blob = dist!(push_p(prior, θp.x), ve)
 
         # NOTE: this "implements" the ABC kernel (indicator here) that is theoretically 
         # part of the min MH call above; at final equilibration (all particles below 
@@ -145,7 +156,7 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
     logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i = 1:nparticles]
 
     ve = deepcopy(varexternal)
-    d1, blob1 = dist!(θs[1].x, ve)
+    d1, blob1 = dist!(push_p(prior, θs[1].x), ve)
     Δs = fill(d1, nparticles)
     blobs = fill(blob1, nparticles)
 
