@@ -4,6 +4,15 @@ module abcdeZ
     using Distributions
     using FLoops
 
-    include("abcde_mcmc.jl")
-    include("abcde_smcZ.jl")
+    include("abcde_types.jl")
+
+    include("abcde_priors.jl")
+    export Factored
+
+    include("abcde_mc.jl")
+    export abcdemc!
+
+    include("abcde_smc.jl")
+    export abcdesmc!
+
 end
