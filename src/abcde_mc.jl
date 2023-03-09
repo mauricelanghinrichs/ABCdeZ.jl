@@ -72,15 +72,13 @@ function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, r
 end
 
 function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
-                    ϵ_pop, ϵ_target, γ, nparticles, nsims, earlystop, rng, ex, nblobs)
+                    ϵ_pop, ϵ_target, γ, nparticles, nsims, rng, ex, nblobs)
     @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
 
-        if earlystop
-            Δs[i] <= ϵ_target && continue
-        end
         trng=rng
         ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
+
         s = i
         ϵ = ifelse(Δs[i] <= ϵ_target, ϵ_target, ϵ_pop)
         if Δs[i] > ϵ
@@ -112,9 +110,8 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
     end
 end
 
-function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0, earlystop=false,
-                verbose=true, rng=Random.GLOBAL_RNG, proposal_width=1.0,
-                ex=ThreadedEx())
+function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0, 
+                verbose=true, rng=Random.GLOBAL_RNG, proposal_width=1.0, ex=ThreadedEx())
     @info("Running abcde! with executor ", typeof(ex))
 
     ### this seems to be initialisation
@@ -155,13 +152,10 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
 
         # returns minimal and maximal distance/cost
         ϵ_l, ϵ_h = extrema(Δs)
-        if earlystop
-            ϵ_h<=ϵ_target && break
-        end
         ϵ_pop = max(ϵ_target,ϵ_l + α * (ϵ_h - ϵ_l))
 
         abcde_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
-                            ϵ_pop, ϵ_target, γ, nparticles, nsims, earlystop, rng, ex, nblobs)
+                            ϵ_pop, ϵ_target, γ, nparticles, nsims, rng, ex, nblobs)
 
         θs = nθs
         Δs = nΔs
