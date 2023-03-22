@@ -152,15 +152,14 @@ end
 function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0.0, 
                 verbose=true, rng=Random.GLOBAL_RNG, ex=ThreadedEx())
     
-    @info("Running abcde! with executor ", typeof(ex))
-
     ### initialisation
+    @info("Running abcdemc! with executor ", typeof(ex))
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative")
     5 ≤ nparticles || error("nparticles must be at least 5")
 
-    # draw prior parameters for each particle
-    θs =[op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
+    # draw prior parameters for each particle, and calculate logprior values
+    θs = [op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
     logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i = 1:nparticles]
 
     ve = deepcopy(varexternal)
@@ -213,6 +212,6 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
     l = length(prior)
     P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
     length(P)==1 && (P=first(P))
-    (P=P, C=Particles(Δs), reached_ϵ=conv, blobs=blobs)
+    (P = P, C = Δs, reached_ϵ = conv, blobs = blobs)
 end
 
