@@ -1,4 +1,5 @@
 
+### particle definition and operations
 struct Particle{Xt}
     x::Xt
     Particle(x::T) where {T} = new{T}(x)
@@ -20,3 +21,16 @@ push_p(density::Factored, p) = push_p.(density.p, p)
 push_p(density::Distribution, p) = push_p.(Ref(density), p)
 push_p(density::ContinuousDistribution, p::Number) = float(p)
 push_p(density::DiscreteDistribution, p::Number) = round(Int, p)
+
+### unnormalised indicator kernel
+struct Indicator0toϵ <: ContinuousUnivariateDistribution
+    ϵ::Float64
+
+    function Indicator0toϵ(ϵ)
+        ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+        new(ϵ)
+    end
+end
+Distributions.insupport(d::Indicator0toϵ, x::Real) = 0.0 ≤ x ≤ d.ϵ ? true : false
+Distributions.pdf(d::Indicator0toϵ, x::Real) = insupport(d, x) ? 1.0 : 0.0
+Distributions.logpdf(d::Indicator0toϵ, x::Real) = insupport(d, x) ? 0.0 : -Inf
