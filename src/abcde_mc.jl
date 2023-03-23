@@ -49,45 +49,6 @@
 # Benjamin E. Nelson et al. (using γ = γ0 * (1+Z)) with a bit of 
 # normal noise as Z~Normal(0,γσ)
 
-function abcdemc_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
-    # calculate cost/dist for each particle
-    # (re-draw parameters if not finite)
-
-    @floop ex for i = 1:nparticles
-        # @init allows re-using mutable temporary objects within each base case/thread
-        # TODO/NOTE: in ThreadedEx mode one might observe a high % of garbage collection
-        # it was hard to check if this @init really works on my varexternal object...
-        # (compared with ve = deepcopy(varexternal) alone allocations were similar,
-        # but also in sequential mode, suggesting it is just not driving the allocations)
-        # NOTE: varexternal is the tuple wrapper of all mutatable external
-        # variables as cellstate, stats, ... (same in abcde_swarm!)
-        # NOTE: θs, logπ, Δs are read out but never written to, (for this
-        # nθs, nlogπ, nΔs are used), so this should be data race free
-        @init ve = deepcopy(varexternal)
-        trng=rng
-
-        # NOTE: I checked that Threads.threadid() also works in an floop
-        # NOTE: seems to have something with thread-safe random numbers, see
-        # https://discourse.julialang.org/t/multithreading-and-random-number-generators/49777/8
-        # NOTE/TODO: maybe this can be improved performance-wise (see FLoops docs
-        # on random numbers)
-        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
-
-        if isfinite(logπ[i])
-            d, blob = dist!(push_p(prior, θs[i].x), ve)
-            Δs[i] = d
-            blobs[i] = blob
-        end
-        while (!isfinite(Δs[i])) || (!isfinite(logπ[i]))
-            θs[i] = op(float, Particle(rand(trng, prior)))
-            logπ[i] = logpdf(prior, push_p(prior, θs[i].x))
-            d, blob = dist!(push_p(prior, θs[i].x), ve)
-            Δs[i] = d
-            blobs[i] = blob
-        end
-    end
-end
-
 function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
                     ϵ_pop, ϵ_target, γ0, γσ, nparticles, nsims, rng, ex, nblobs)
     @floop ex for i in 1:nparticles
@@ -191,7 +152,7 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
         ϵ_l, ϵ_h = extrema(Δs)
         ϵ_pop = max(ϵ_target, ϵ_l + α * (ϵ_h - ϵ_l))
 
-        abcde_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
+        abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
                             ϵ_pop, ϵ_target, γ0, γσ, nparticles, nsims, rng, ex, nblobs)
 
         θs = nθs
@@ -209,9 +170,10 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generatio
         @info "End:" completion = complete converged = conv nsim = sum(nsims) range_ϵ = extrema(Δs)
     end
     θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
-    l = length(prior)
-    P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
-    length(P)==1 && (P=first(P))
-    (P = P, C = Δs, reached_ϵ = conv, blobs = blobs)
+    # l = length(prior)
+    # P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
+    # length(P)==1 && (P=first(P))
+    # (P = P, C = Δs, reached_ϵ = conv, blobs = blobs)
+    (P = θs, C = Δs, reached_ϵ = conv, blobs = blobs)
 end
 
