@@ -22,148 +22,275 @@
 #   model evidences of different models??? (that maybe have a different 
 #   amount of epsilon iterations etc.?!)
 
-function abcdesmc_step!(logγ, blobs, θs, prior, dist!, varexternal, ϵ_kernel, nparticles, rng, ex)
+### helper methods
+get_ess(Wns) = 1.0/sum(Wns.^2)
 
-    # NOTE/TODO: random number not needed here?? maybe remove
-    # NOTE/TODO: also add MH step here?
+### smc methods
+function abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
+    # NOTE: the update step here is based on the ratio 
+    # of unnormalised posterior distributions γ, i.e. prior x likelihood
+    # (aka ABC kernel), for the same θ_{t-1} at the current (t-1)
+    # and next target (t), i.e. γ_t(θ_{t-1}) / γ_{t-1}(θ_{t-1});
+    # the prior ratio cancels and we need to compare the kernels only
+    
+    # more specifically, ϵ_k is the previous kernel γ_{t-1}(θ_{t-1}),
+    # while logpdf(ϵ_k_new, Δs[i]) computes kernel at current (new) ϵ target
 
-    @floop ex for i = 1:nparticles
-        @init ve = deepcopy(varexternal)
-        trng=rng
-        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
-        
-        # parameters
-        θ = push_p(prior, θs[i].x)
+    # NOTE: that the kernels are unnormalised (evidence values 
+    # computed up to a factor of first and final kernel normalisations)
 
-        # compute log-prior value
-        logπ = logpdf(prior, θ)
-
-        # compute distance value (between model / data)
-        d, blob = dist!(θ, ve)
-        blobs[i] = blob
-
-        # compute log-likelihood (ABC kernel) value
-        logk = logpdf(ϵ_kernel, d)
-
-        # compute prior*likelihood (via ABC kernel) in log space
-        logγ[i] = logπ + logk
+    for i in 1:nparticles
+        if alive[i]
+            # with an indicator kernel this will be 0 or 1
+            ws[i] = exp(logpdf(ϵ_k_new, Δs[i]) - logpdf(ϵ_k, Δs[i]))
+        end
     end
 end
 
-function abcdesmc_resample!(ess_inds, θs, logγ, Wns, nparticles, rng)
+function abcdesmc_resample!(ess_inds, θs, logπ, Δs, Wns, alive, nparticles, rng, blobs)
     # resample with normalised weights, indices updated to ess_inds
     wsample!(rng, 1:nparticles, Wns, ess_inds, replace=true)
             
     for i in 1:nparticles
         θs[i] = θs[ess_inds[i]]
-        logγ[i] = logγ[ess_inds[i]]
+        logπ[i] = logπ[ess_inds[i]]
+        Δs[i] = Δs[ess_inds[i]]
+        blobs[i] = blobs[ess_inds[i]]
     end
 
+    # all particles alive again (Wns>0.0) and equal weight
     Wns .= 1.0/nparticles
+    alive .= true
 end
 
-function abcdesmc_update_ws!(ws, logπ, logk, nlogπ, nlogk)
-    
+function abcdesmc_swarm!(prior, dist!, varexternal, 
+                        alive, θs, logπ, Δs, nθs, nlogπ, nΔs,
+                        ϵ_k_new, γ0, γσ, nparticles, 
+                        nsims, naccs, rng, ex, nblobs)
+    @floop ex for i in 1:nparticles
+        @init ve = deepcopy(varexternal)
+
+        trng=rng
+        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
+
+        ### zero-weight particles can be neglected
+        alive[i] || continue
+
+        ### DE (diffential evolution) move
+        # NOTE: DE move done within alive particles only 
+        # (such a proposal kernel is still symmetric)
+        a = i
+        while a == i
+            # a = rand(trng, 1:nparticles)
+            a = wsample(trng, 1:nparticles, alive)
+        end
+        b = a
+        while b == a || b == i
+            # b = rand(trng, 1:nparticles)
+            b = wsample(trng, 1:nparticles, alive)
+        end
+        # θp is a new Particle with new tuple values (.x)
+        θp = op(+, θs[i], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(trng)*γσ) ))
+        ###
+
+        ### MH step acceptance step to target current ϵ
+        # DE move above is symmetric, hence min criterion 
+        # simplifies to prior and ABC kernel ratios
+        nsims[i] += 1
+        lπ = logpdf(prior, push_p(prior, θp.x))
+        dp, blob = dist!(push_p(prior, θp.x), ve)
+
+        w = (lπ - logπ[i] # prior ratio (in log space)
+            + logpdf(ϵ_k_new, dp) - logpdf(ϵ_k_new, Δs[i])) # kernel ratio (in log space)
+        # for indicator, logpdf(ϵ_kernel, Δs[i]) should be 0 (as we only look at alive)
+
+        # if condition here the same as "log(rand(trng)) < min(0, w)"
+        if 0.0 ≤ w || log(rand(trng)) < w
+            nΔs[i] = dp
+            nθs[i] = θp
+            nlogπ[i] = lπ
+            nblobs[i] = blob
+            naccs[i] += 1
+        end
+    end
 end
 
-function abcdesmc!(prior, dist, ϵ_target, varexternal;
-                nparticles::Int=100, δess=0.4,
-                α=0.95,
-                verbose=true, rng=Random.GLOBAL_RNG, ex=ThreadedEx(),
-                testmode=false)
+### main smc
+function abcdesmc!(prior, dist!, ϵ_target, varexternal;
+                nparticles::Int=100, α=0.95, 
+                δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=1, 
+                ABCk=Indicator0toϵ, facc_min=0.25, facc_tune=0.95,
+                verbose=true, verboseout=true, 
+                rng=Random.GLOBAL_RNG, ex=ThreadedEx())
     
     ### initialisation
-    @info("Running abcdemc! with executor ", typeof(ex))
+    @info("Running abcdesmc! with executor ", typeof(ex))
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
+    0.0 ≤ δess ≤ 1.0 || error("δess must be in 0 <= δess <= 1")
+    0.0 ≤ facc_min ≤ 1.0 || error("facc_min must be in 0 <= facc_min <= 1")
+    0.0 ≤ facc_tune ≤ 1.0 || error("facc_tune must be in 0 <= facc_tune <= 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative") # TODO/NOTE: like this or adaptive termination?
-    5 ≤ nparticles || error("nparticles must be at least 5") # TODO: maybe chance, see KissABC SMC
+    5 ≤ nparticles || error("nparticles must be at least 5") # TODO: maybe change, see KissABC SMC
+    1 ≤ Kmcmc || error("Kmcmc must be at least 1")
+    1 ≤ nsims_max || error("nsims_max must be at least 1")
 
-    ϵ_current = Inf # current ϵ (ABC target distance)
-    ϵ_kernel = Normal(0.0, ϵ_current)
+    # draw prior parameters for each particle, and calculate logprior values
+    θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
+    logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i in 1:nparticles]
 
-    ess_min = nparticles * δess # minimal effective sample size of the population
-    ess_inds = zeros(Int, nparticles) # placeholder for resampling indices
-    logZ = 0.0 # Z = 1.0 current evidence value
-
-    # NOTE/TODO: preallocate blobs and logγ objects?
     ve = deepcopy(varexternal)
     d1, blob1 = dist!(push_p(prior, θs[1].x), ve)
+    Δs = fill(d1, nparticles)
+    blobs = fill(blob1, nparticles)
 
-    if testmode
-        # maybe define some more vector to keep track of iterations for testing
-    end
+    # this initialse a first round of particles from prior
+    # with finite logprior and dist values; updates θs, logπ, Δs, blobs
+    abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
 
-    # draw prior parameters for each particle
-    θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
+    # specify the initial kernel logpdfs
+    ϵ = Inf # current ϵ (ABC target distance)
+    ϵ_k = ABCk(ϵ)
 
-    # at first iteration γ=prior*likelihood (likelihood via ABC kernel 
-    # at ϵ=Inf) γ (unnormalised posterior) is identical to likelihood
-    logγ = [logpdf(prior, push_p(prior, θs[i].x)) for i in 1:nparticles]
-        
-        
+    # sample size measures for resampling option
+    ess_min = nparticles * δess # minimal effective sample size of the population
+    ess_inds = zeros(Int, nparticles) # placeholder for resampling indices
+    
+    # Z = 1.0 current evidence value (integral over prior)
+    logZ = 0.0 
 
     # normalised weights and placeholder for weights product
+    ws = ones(nparticles)
     Wns = ones(nparticles)./nparticles
     wprod = ones(nparticles)
     wnorm = 0.0
+    alive = ones(Bool, nparticles)
+    ess = 0.0
 
-    # 
+    # count total simulations and acceptances (without init phase)
+    nsims = zeros(Int, nparticles)
+    naccs = zeros(Int, nparticles)
+    facc = 1.0
+
+    # parameters for DE move
+    γ0 = 2.38 / sqrt(2 * length(prior))
+    γσ = 1e-5
+    ###
+
+    if verboseout
+        ϵs = [ϵ]
+        ranges_ϵ = [extrema(Δs)]
+        logZs = [logZ]
+        esss = [get_ess(Wns)]
+        faccs = [facc]
+        γ0s = [γ0]
+    end
+
     iters = 0
     while true
         iters += 1
 
         # set a new ϵ target, including ABC kernel
-        ϵ_new = quantile(Δs, α)
-        ϵ_kernel = Normal(0.0, ϵ_new) # TODO/NOTE: at this point correct??
+        # NOTE: maybe also add option to force ϵ down by at least x%? 
+        # may cause too low or only-zero weights however...
 
-        # update target weights
-        # NOTE/TODO: does this make sense? the prior value (in there) 
-        # may be actually the same, so we don't need them???
-        ws .= nlogγ .- logγ
+        # NOTE/TODO: maybe change to maximum(final, quantile)?
+        # NOTE/TODO: quantile maybe on alive particles only?
+        ϵ = maximum((quantile(Δs[alive], α), ϵ_target))
+        ϵ_k_new = ABCk(ϵ)
+
+        # update target weights ws
+        # NOTE: here we already computea nlogk... which we also need for MH?
+        # don't do it twice... improve in case
+        abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
 
         # update normalised weights and get norm for evidence
         wprod .= (Wns .* ws)
-        wnorm = sum(wprod)
-        Wns .= (wprod./wnorm)
+        wnorm = sum(wprod) # with indicator kernel, this is % of surviving particles
+        Wns .= (wprod ./ wnorm)
+        alive .= (Wns .> 0.0)
 
-        # update evidence value
-        # NOTE/TODO: maybe do this in log-mode?
+        # update evidence value 
+        # (NOTE: log-space may make this estimate biased, but ok...)
         logZ += log(wnorm)
 
-        
-
+        # reset naccs and tune proposal if it dropped below facc_min in previous step
+        naccs .= 0
+        facc < facc_min && (γ0 *= facc_tune)
 
         # resample if effective sample size too low
-        # TODO/NOTE: new or old particles here???
-        ess(Wns)<ess_min && (abcdesmc_resample!(ess_inds, θs, logγ, Wns, nparticles, rng))
+        ess = get_ess(Wns)
+        ess < ess_min && (
+            abcdesmc_resample!(ess_inds, θs, logπ, Δs, Wns, alive, nparticles, rng, blobs);
+            ess = get_ess(Wns))
 
-        # MCMC steps at current target density (as given by ϵ_current)
+        # MCMC steps at current target density
         
+        # (as given by ϵ_current) => no should be ϵ_new
 
+        # NOTE: only iterate for alive particles, as Wns=0.0 
+        # will not contribute to evidence and posterior samples anyway
+        
+        # NOTE: maybe write into a list (also in multithreading) 
+        # for each particle, whether accepted or not => maybe to tune DE jump
+        # (see geological paper)
+        
+        for __ in 1:Kmcmc
+            nθs = identity.(θs) # vector of particles, where θs[i].x are parameters (as tuple)
+            nΔs = identity.(Δs) # vector of floats with distance values (model/data)
+            nlogπ = identity.(logπ) # vector of floats with log prior values of above particles
+            nblobs = identity.(blobs) # blobs (some additional data) for each particle
+            
 
-        ϵ_current = ϵ_new
+            abcdesmc_swarm!(prior, dist!, varexternal, 
+                            alive, θs, logπ, Δs, nθs, nlogπ, nΔs,
+                            ϵ_k_new, γ0, γσ, nparticles, 
+                            nsims, naccs, rng, ex, nblobs)
+
+            θs = nθs
+            Δs = nΔs
+            logπ = nlogπ
+            blobs = nblobs  
+        end
+
+        # compute acceptance fraction of the last Kmcmc Markov steps 
+        # among live particles
+        facc = sum(naccs)/(sum(alive)*Kmcmc)
+
+        # update kernel
+        ϵ_k = ϵ_k_new
+
+        if verboseout
+            push!(ϵs, ϵ)
+            push!(ranges_ϵ, extrema(Δs))
+            push!(logZs, logZ)
+            push!(esss, ess)
+            push!(faccs, facc)
+            push!(γ0s, γ0)
+        end
+
+        if verbose
+            @info "Finished run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ
+        end
+
+        # stopping criterion
+        (ϵ ≤ ϵ_target || sum(nsims) ≥ nsims_max) && break
+    end
+
+    if verbose
+        @info "Final run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ
     end
 
     ### report results
-    # NOTE/TODO: need to return 
-    # 1) weights (both types?), posterior samples may only make sense with weights!
-    # 2) evidence estimate?
     θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
-    l = length(prior)
-    P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
-    length(P)==1 && (P=first(P))
-    (P = P, C = Δs, ϵ = ϵ, blobs = blobs)
+    # l = length(prior)
+    # P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
+    # length(P)==1 && (P=first(P))
+    # NOTE: previous: P = P
+
+    if verboseout
+        (P = θs, Wns = Wns, C = Δs, ϵ = ϵ, logZ = logZ, blobs = blobs,
+            ϵs = ϵs, ranges_ϵ = ranges_ϵ, logZs = logZs, esss = esss, faccs = faccs, γ0s = γ0s)
+    else
+        (P = θs, Wns = Wns, C = Δs, ϵ = ϵ, logZ = logZ, blobs = blobs)
+    end
 end
-
-### helper methods
-# function logsumexp(x::Vector{T}) where T
-#     res = zero(T)
-#     for i in eachindex(x)
-#         res += exp(x[i])
-#     end
-#     log(res)
-# end
-
-# log_ess(logw) = -logsumexp(2 .* logw)
-ess(Wns) = 1/sum(Wns.^2)
-
