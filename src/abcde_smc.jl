@@ -50,13 +50,13 @@ end
 function abcdesmc_resample!(ess_inds, θs, logπ, Δs, Wns, alive, nparticles, rng, blobs)
     # resample with normalised weights, indices updated to ess_inds
     wsample!(rng, 1:nparticles, Wns, ess_inds, replace=true)
-            
-    for i in 1:nparticles
-        θs[i] = θs[ess_inds[i]]
-        logπ[i] = logπ[ess_inds[i]]
-        Δs[i] = Δs[ess_inds[i]]
-        blobs[i] = blobs[ess_inds[i]]
-    end
+    
+    # NOTE: need to create a copy/allocations here by array[ess_inds] 
+    # (looping over indices is wrong, as particles may get overwritten)
+    θs .= θs[ess_inds]
+    logπ .= logπ[ess_inds]
+    Δs .= Δs[ess_inds]
+    blobs .= blobs[ess_inds]
 
     # all particles alive again (Wns>0.0) and equal weight
     Wns .= 1.0/nparticles
@@ -134,7 +134,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     1 ≤ nsims_max || error("nsims_max must be at least 1")
 
     parallel ? ex=ThreadedEx() : ex=SequentialEx()
-    @info("Running abcdesmc! with executor ", typeof(ex))
+    @info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex))
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
@@ -238,7 +238,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
             θs = nθs
             Δs = nΔs
             logπ = nlogπ
-            blobs = nblobs  
+            blobs = nblobs
         end
 
         # compute acceptance fraction of the last Kmcmc Markov steps 
