@@ -110,14 +110,19 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
     end
 end
 
-function abcdemc!(prior, dist!, ϵ_target, varexternal; nparticles=50, generations=20, α=0.0, 
-                verbose=true, rng=Random.GLOBAL_RNG, ex=ThreadedEx())
+function abcdemc!(prior, dist!, ϵ_target, varexternal; 
+                nparticles::Int=50, generations::Int=20, α=0.0, 
+                verbose=true, rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
     ### initialisation
     @info("Running abcdemc! with executor ", typeof(ex))
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative")
     5 ≤ nparticles || error("nparticles must be at least 5")
+    1 ≤ generations || error("generations must be at least 1")
+
+    parallel ? ex=ThreadedEx() : ex=SequentialEx()
+    @info("Running abcdesmc! with executor ", typeof(ex))
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i = 1:nparticles]

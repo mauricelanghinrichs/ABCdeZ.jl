@@ -96,9 +96,9 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
         ### MH step acceptance step to target current ϵ
         # DE move above is symmetric, hence min criterion 
         # simplifies to prior and ABC kernel ratios
-        nsims[i] += 1
         lπ = logpdf(prior, push_p(prior, θp.x))
         dp, blob = dist!(push_p(prior, θp.x), ve)
+        nsims[i] += 1
 
         w = (lπ - logπ[i] # prior ratio (in log space)
             + logpdf(ϵ_k_new, dp) - logpdf(ϵ_k_new, Δs[i])) # kernel ratio (in log space)
@@ -121,10 +121,9 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=1, 
                 ABCk=Indicator0toϵ, facc_min=0.25, facc_tune=0.95,
                 verbose=true, verboseout=true, 
-                rng=Random.GLOBAL_RNG, ex=ThreadedEx())
+                rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
     ### initialisation
-    @info("Running abcdesmc! with executor ", typeof(ex))
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
     0.0 ≤ δess ≤ 1.0 || error("δess must be in 0 <= δess <= 1")
     0.0 ≤ facc_min ≤ 1.0 || error("facc_min must be in 0 <= facc_min <= 1")
@@ -133,6 +132,9 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     5 ≤ nparticles || error("nparticles must be at least 5") # TODO: maybe change, see KissABC SMC
     1 ≤ Kmcmc || error("Kmcmc must be at least 1")
     1 ≤ nsims_max || error("nsims_max must be at least 1")
+
+    parallel ? ex=ThreadedEx() : ex=SequentialEx()
+    @info("Running abcdesmc! with executor ", typeof(ex))
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
@@ -147,7 +149,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     # with finite logprior and dist values; updates θs, logπ, Δs, blobs
     abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
 
-    # specify the initial kernel logpdfs
+    # specify the initial kernel
     ϵ = Inf # current ϵ (ABC target distance)
     ϵ_k = ABCk(ϵ)
 
@@ -192,15 +194,10 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         # set a new ϵ target, including ABC kernel
         # NOTE: maybe also add option to force ϵ down by at least x%? 
         # may cause too low or only-zero weights however...
-
-        # NOTE/TODO: maybe change to maximum(final, quantile)?
-        # NOTE/TODO: quantile maybe on alive particles only?
         ϵ = maximum((quantile(Δs[alive], α), ϵ_target))
         ϵ_k_new = ABCk(ϵ)
 
         # update target weights ws
-        # NOTE: here we already computea nlogk... which we also need for MH?
-        # don't do it twice... improve in case
         abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
 
         # update normalised weights and get norm for evidence
@@ -210,7 +207,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         alive .= (Wns .> 0.0)
 
         # update evidence value 
-        # (NOTE: log-space may make this estimate biased, but ok...)
+        # (NOTE: log-space may make this estimate biased (Jensen ineq.), but ok...)
         logZ += log(wnorm)
 
         # reset naccs and tune proposal if it dropped below facc_min in previous step
@@ -224,16 +221,8 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
             ess = get_ess(Wns))
 
         # MCMC steps at current target density
-        
-        # (as given by ϵ_current) => no should be ϵ_new
-
         # NOTE: only iterate for alive particles, as Wns=0.0 
         # will not contribute to evidence and posterior samples anyway
-        
-        # NOTE: maybe write into a list (also in multithreading) 
-        # for each particle, whether accepted or not => maybe to tune DE jump
-        # (see geological paper)
-        
         for __ in 1:Kmcmc
             nθs = identity.(θs) # vector of particles, where θs[i].x are parameters (as tuple)
             nΔs = identity.(Δs) # vector of floats with distance values (model/data)
