@@ -23,6 +23,9 @@
 #   amount of epsilon iterations etc.?!)
 
 ### helper methods
+# effective sample size (~ number of particles)
+# (with indicator kernel (all Wns 0.0 or some identical 
+# value c, with sum(Wns)=1) get_ess(Wns)≈sum(alive))
 get_ess(Wns) = 1.0/sum(Wns.^2)
 
 ### smc methods
