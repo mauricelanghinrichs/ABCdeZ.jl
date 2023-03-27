@@ -42,6 +42,11 @@ function abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
     # NOTE: that the kernels are unnormalised (evidence values 
     # computed up to a factor of first and final kernel normalisations)
 
+    # NOTE: for this ws calculation we take the same simulation results 
+    # from before and don't compute a second simulation for this particle 
+    # to compare it to the new kernel ϵ_k_new; i.e. Δs[i] is the same 
+    # here in both pdf evaluations
+
     for i in 1:nparticles
         if alive[i]
             # with an indicator kernel this will be 0 or 1
@@ -123,7 +128,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, 
                 δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=1, 
                 ABCk=Indicator0toϵ, facc_min=0.25, facc_tune=0.95,
-                verbose=true, verboseout=true, 
+                verbose::Bool=true, verboseout::Bool=true, 
                 rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
     ### initialisation
@@ -132,9 +137,11 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     0.0 ≤ facc_min ≤ 1.0 || error("facc_min must be in 0 <= facc_min <= 1")
     0.0 ≤ facc_tune ≤ 1.0 || error("facc_tune must be in 0 <= facc_tune <= 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative") # TODO/NOTE: like this or adaptive termination?
-    5 ≤ nparticles || error("nparticles must be at least 5") # TODO: maybe change, see KissABC SMC
     1 ≤ Kmcmc || error("Kmcmc must be at least 1")
     1 ≤ nsims_max || error("nsims_max must be at least 1")
+
+    nparticles_min = ceil(Int, 3 * length(prior) / (min(α, δess)))
+    nparticles_min ≤ nparticles || error("nparticles must be at least $(nparticles_min)")
 
     parallel ? ex=ThreadedEx() : ex=SequentialEx()
     @info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex))
@@ -197,7 +204,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         # set a new ϵ target, including ABC kernel
         # NOTE: maybe also add option to force ϵ down by at least x%? 
         # may cause too low or only-zero weights however...
-        ϵ = maximum((quantile(Δs[alive], α), ϵ_target))
+        ϵ = max(quantile(Δs[alive], α), ϵ_target)
         ϵ_k_new = ABCk(ϵ)
 
         # update target weights ws
@@ -226,13 +233,17 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         # MCMC steps at current target density
         # NOTE: only iterate for alive particles, as Wns=0.0 
         # will not contribute to evidence and posterior samples anyway
+        # NOTE: one could also break the Kmcmc loop if acceptance ratio high enough 
+        # (so only do the "extra" work if getting good proposals becomes diffcult, 
+        # see KissABC; however (also for Z estimate) it may be better in general 
+        # to equilibrate better to current target distribution, so Kmcmc>1 in every 
+        # step may be wanted in some cases)
         for __ in 1:Kmcmc
             nθs = identity.(θs) # vector of particles, where θs[i].x are parameters (as tuple)
             nΔs = identity.(Δs) # vector of floats with distance values (model/data)
             nlogπ = identity.(logπ) # vector of floats with log prior values of above particles
             nblobs = identity.(blobs) # blobs (some additional data) for each particle
             
-
             abcdesmc_swarm!(prior, dist!, varexternal, 
                             alive, θs, logπ, Δs, nθs, nlogπ, nΔs,
                             ϵ_k_new, γ0, γσ, nparticles, 
