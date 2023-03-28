@@ -1,32 +1,59 @@
 
 # implements an ABC DE SMC algorithm with evidence (Z) estimate
 
-# NOTES:
-# - nice would be to keep the DE MCMC move... seemed just 
-#   to perform good before
-# - unclear yet how then to correctly compute weights
-# - KissABC smc can be maybe used as a template, there are currently no weights
-#   explicitly because with current indicator kernel particles are just 
-#   alive (1) or dead (0); maybe generalise this and instead of live/dead syntax,
-#   simply do a check if weight > 0.0 (then it would still be fast for 
-#   indicator kernel but also allows continuous kernels)
-# - note: not so sure currently about the smc proposal gamma in KissABC SMC,
-#   maybe take the one I used now in abcdemc!; 
-# - multiple MCMC chains per ϵ step needed? implement?
-
-# - something is currently weird with the ABC kernel... maybe start with 
-#   an indicator, would it make sense? (think of very first iteration... 
-#   with indicator kernel all particles would be accepted as it should be)
-# - does it matter that ABC kernel is not scaled / normalised? should 
-#   affect the scaling of the evidence; does it matter when we compare 
-#   model evidences of different models??? (that maybe have a different 
-#   amount of epsilon iterations etc.?!)
-
 ### helper methods
 # effective sample size (~ number of particles)
 # (with indicator kernel (all Wns 0.0 or some identical 
 # value c, with sum(Wns)=1) get_ess(Wns)≈sum(alive))
 get_ess(Wns) = 1.0/sum(Wns.^2)
+
+# NOTE: maybe change resampling from multinomial to residual, stratified or 
+# systematic resampling with lower variance; e.g., see KissABC 
+# (only for indicator / alive-uniform weights, which I may want to generalise)
+# idxalive = (1:nparticles)[alive]
+# idx=repeat(idxalive,ceil(Int,nparticles/length(idxalive)))[1:nparticles])
+function wsample_stratified!(rng, weights, inds) # ; wnorm=false
+    # method for stratified resampling, writing sampling indices 
+    # into inds (in-place) with n=length(weights)=length(inds)
+    # resamples in total
+
+    # NOTE: assume normalised weights here, i.e. sum(weights)≈1.0,
+    # otherwise use wnorm=true to (re-)normalise
+    # wnorm && (weights ./= sum(weights))
+
+    # NOTE: a further check may be length(weights)==length(inds),
+    # but not needed in our package context here
+
+    # NOTE: this version works for continuous weights; of course 
+    # with indicator kernel weights simplify to two possible 
+    # values (0 and some c>0), so one could implement a faster 
+    # version for indicator kernels only, but it should be fast enough
+
+    # value increment per group/stratum (s)
+    sval = 1/length(weights)
+
+    # current sum of weights and resampling index
+    wsum = 0.0
+    i = 0
+
+    # support range for uniform random variable
+    unif0 = 0.0
+    unif1 = 0.0
+
+    # for each stratum si, draw random uniform r and take
+    # the resampling index i of the weight that is "hit" by r
+    for si in eachindex(weights)
+        unif1 = unif0 + sval
+        r = rand(rng, Uniform(unif0, unif1))
+        while r > wsum
+            i += 1
+            wsum += weights[i]
+        end
+        unif0 = unif1
+        inds[si] = i
+    end
+    inds
+end
 
 ### smc methods
 function abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
@@ -56,9 +83,14 @@ function abcdesmc_update_ws!(ws, alive, Δs, ϵ_k, ϵ_k_new, nparticles)
 end
 
 function abcdesmc_resample!(ess_inds, θs, logπ, Δs, Wns, alive, nparticles, rng, blobs)
+    ### former multinomial sampling
     # resample with normalised weights, indices updated to ess_inds
-    wsample!(rng, 1:nparticles, Wns, ess_inds, replace=true)
+    # wsample!(rng, 1:nparticles, Wns, ess_inds, replace=true)
     
+    ### same-expectation, lower-variance stratified resampling
+    # resample with normalised weights, indices updated to ess_inds
+    wsample_stratified!(rng, Wns, ess_inds)
+
     # NOTE: need to create a copy/allocations here by array[ess_inds] 
     # (looping over indices is wrong, as particles may get overwritten)
     θs .= θs[ess_inds]
@@ -297,3 +329,27 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         (P = θs, Wns = Wns, C = Δs, ϵ = ϵ, logZ = logZ, blobs = blobs)
     end
 end
+
+### some (outdated) NOTES:
+# - nice would be to keep the DE MCMC move... seemed just 
+#   to perform good before
+# - unclear yet how then to correctly compute weights
+# - KissABC smc can be maybe used as a template, there are currently no weights
+#   explicitly because with current indicator kernel particles are just 
+#   alive (1) or dead (0); maybe generalise this and instead of live/dead syntax,
+#   simply do a check if weight > 0.0 (then it would still be fast for 
+#   indicator kernel but also allows continuous kernels)
+# - note: not so sure currently about the smc proposal gamma in KissABC SMC,
+#   maybe take the one I used now in abcdemc!; 
+# - multiple MCMC chains per ϵ step needed? implement?
+
+# - something is currently weird with the ABC kernel... maybe start with 
+#   an indicator, would it make sense? (think of very first iteration... 
+#   with indicator kernel all particles would be accepted as it should be)
+# - does it matter that ABC kernel is not scaled / normalised? should 
+#   affect the scaling of the evidence; does it matter when we compare 
+#   model evidences of different models??? (that maybe have a different 
+#   amount of epsilon iterations etc.?!) => see Goodnotes notes and slides 
+#   (only kernel normalisation of last ϵ kernel should matter, others 
+#   cancel telescopically)
+###
