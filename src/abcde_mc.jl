@@ -1,53 +1,6 @@
 
-# implements the ABC DE MCMC algorithm from KissABC (my adaption)
-
-
-### NOTE: this script is an addition to KissABC to implement
-### multithreading support with in-place operations for the ABCDE method;
-### for this we use FLoops and its @floop and @init macros
-
-# TODO/NOTE: how to really check if multithreading runs correctly?
-# maybe fix all random seeds
-
-# IMPORTANT NOTE: in this code we use multithreading in the form of "filling pre-allocated
-# output" (https://juliafolds.github.io/data-parallelism/tutorials/mutations/#filling_outputs)
-# this can be unsafe and cause data races! (dict, sparsearrays, Bit vectors, views)
-# but Arrays should be fine (and θs, logπ, Δs, nθs, nlogπ, nΔs are arrays)
-# println(typeof(θs)) => Vector{KissABC.Particle{Tuple{Float64, Float64, Float64}}}
-# println(typeof(logπ)) => Vector{Float64}
-# println(typeof(Δs)) => Vector{Float64}
-
-# NOTE: the op tuple operations (also on a Particle) seem to
-# be zero-allocating (both immutable types!, no heap memory needed) and can be
-# broadcasted (over multiple elements in a tuple or Particle.x); values inside
-# the tuples are all plain data (int, float), so that this should be no problem
-# for multithreading (although zero-allocation, nothing is changed in-place,
-# just plain data calculation in stack memory); in the end written to nθs
-# (which in each generation is created as deepcopy and creates allocations, by identity.());
-# see also seems tests in polylox_env_ABC_HSC_test.jl
-# so all things at θs[i], logπ[i], Δs[i] are immutable, such as Vector{SomeType}()
-# with SomeType immutable as in my question (https://discourse.julialang.org/t/how-to-implement-multi-threading-with-external-in-place-mutable-variables/62610/3)
-
-# NOTE: @reduce needed? if yes
-# use solution like this https://discourse.julialang.org/t/using-floops-jl-to-update-array-counters/58805
-# or this (histogram)? https://juliafolds.github.io/data-parallelism/tutorials/quick-introduction/
-
-# NOTE: on push_p(prior, θs[i].x) (or push_p(prior, θp[i].x)) functionality;
-# this makes sure that the tuple parameters θs[i].x of a particle θs[i] will 
-# be converted to the same value domain as the prior distributions; only makes 
-# a practical difference when DiscreteDistribution's are involved; e.g., 
-# push_p will then convert (1.12131, 3.0) [= θs[i].x] to (1.12131, 3)
-# NOTE (important): particles internally will have continuous values, even 
-# if they are discrete (e.g. 3.123 will be kept), but the push_p/op float 
-# calls (to 3 or 3.0) are always applied to the "outside", i.e. when 
-# prior pdf or distance functions are called; also in the final reporting 
-# of the samples!
-
-# NOTE: on "γ0 = 2.38 / sqrt(2 * length(prior)), γσ = 1e-5";
-# the values here for the DE proposal move come from 
-# Cajo J. F. Ter Braak and also (with the actual implentation) from 
-# Benjamin E. Nelson et al. (using γ = γ0 * (1+Z)) with a bit of 
-# normal noise as Z~Normal(0,γσ)
+# implements the ABC DE MCMC algorithm
+# adapted from KissABC
 
 function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ, nΔs,
                     ϵ_pop, ϵ_target, γ0, γσ, nparticles, nsims, rng, ex, nblobs)
@@ -181,3 +134,51 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal;
     (P = θs, C = Δs, reached_ϵ = conv, blobs = blobs)
 end
 
+###### some (outdated) notes
+# NOTE: on "γ0 = 2.38 / sqrt(2 * length(prior)), γσ = 1e-5";
+# the values here for the DE proposal move come from 
+# Cajo J. F. Ter Braak and also (with the actual implentation) from 
+# Benjamin E. Nelson et al. (using γ = γ0 * (1+Z)) with a bit of 
+# normal noise as Z~Normal(0,γσ)
+
+### NOTE: this script is an addition to KissABC to implement
+### multithreading support with in-place operations for the ABCDE method;
+### for this we use FLoops and its @floop and @init macros
+
+# TODO/NOTE: how to really check if multithreading runs correctly?
+# maybe fix all random seeds
+
+# IMPORTANT NOTE: in this code we use multithreading in the form of "filling pre-allocated
+# output" (https://juliafolds.github.io/data-parallelism/tutorials/mutations/#filling_outputs)
+# this can be unsafe and cause data races! (dict, sparsearrays, Bit vectors, views)
+# but Arrays should be fine (and θs, logπ, Δs, nθs, nlogπ, nΔs are arrays)
+# println(typeof(θs)) => Vector{KissABC.Particle{Tuple{Float64, Float64, Float64}}}
+# println(typeof(logπ)) => Vector{Float64}
+# println(typeof(Δs)) => Vector{Float64}
+
+# NOTE: the op tuple operations (also on a Particle) seem to
+# be zero-allocating (both immutable types!, no heap memory needed) and can be
+# broadcasted (over multiple elements in a tuple or Particle.x); values inside
+# the tuples are all plain data (int, float), so that this should be no problem
+# for multithreading (although zero-allocation, nothing is changed in-place,
+# just plain data calculation in stack memory); in the end written to nθs
+# (which in each generation is created as deepcopy and creates allocations, by identity.());
+# see also seems tests in polylox_env_ABC_HSC_test.jl
+# so all things at θs[i], logπ[i], Δs[i] are immutable, such as Vector{SomeType}()
+# with SomeType immutable as in my question (https://discourse.julialang.org/t/how-to-implement-multi-threading-with-external-in-place-mutable-variables/62610/3)
+
+# NOTE: @reduce needed? if yes
+# use solution like this https://discourse.julialang.org/t/using-floops-jl-to-update-array-counters/58805
+# or this (histogram)? https://juliafolds.github.io/data-parallelism/tutorials/quick-introduction/
+
+# NOTE: on push_p(prior, θs[i].x) (or push_p(prior, θp[i].x)) functionality;
+# this makes sure that the tuple parameters θs[i].x of a particle θs[i] will 
+# be converted to the same value domain as the prior distributions; only makes 
+# a practical difference when DiscreteDistribution's are involved; e.g., 
+# push_p will then convert (1.12131, 3.0) [= θs[i].x] to (1.12131, 3)
+# NOTE (important): particles internally will have continuous values, even 
+# if they are discrete (e.g. 3.123 will be kept), but the push_p/op float 
+# calls (to 3 or 3.0) are always applied to the "outside", i.e. when 
+# prior pdf or distance functions are called; also in the final reporting 
+# of the samples!
+######
