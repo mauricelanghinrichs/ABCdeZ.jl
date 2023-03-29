@@ -5,16 +5,16 @@ module ABCdeZ
     using StatsBase
     using FLoops
 
-    include("abcde_priors.jl")
+    include("abcdez_priors.jl")
     export Factored
 
-    include("abcde_types.jl")
-    include("abcde_init.jl")
+    include("abcdez_types.jl")
+    include("abcdez_init.jl")
 
-    include("abcde_mc.jl")
+    include("abcdez_mc.jl")
     export abcdemc!
 
-    include("abcde_smc.jl")
+    include("abcdez_smc.jl")
     export abcdesmc!
-    
+
 end
