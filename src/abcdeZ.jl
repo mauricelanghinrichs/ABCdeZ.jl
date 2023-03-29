@@ -1,4 +1,4 @@
-module abcdeZ
+module ABCdeZ
 
     using Random
     using Distributions

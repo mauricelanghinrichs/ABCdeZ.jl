@@ -1,4 +1,4 @@
-# abcdeZ.jl
+# ABCdeZ.jl
 
 # sync/document github
 # - two example files for both alg.
