@@ -74,7 +74,8 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal;
     1 ≤ generations || error("generations must be at least 1")
 
     parallel ? ex=ThreadedEx() : ex=SequentialEx()
-    @info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex))
+    verbose && (@info("Running abcdemc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex)))
+    verbose && (@info "Running abcdemc! with" ϵ_target nparticles generations α rng parallel)
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
@@ -122,10 +123,10 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal;
         end
         complete = ncomplete
     end
+
     conv = maximum(Δs) <= ϵ_target
-    if verbose
-        @info "End:" completion = complete converged = conv nsim = sum(nsims) range_ϵ = extrema(Δs)
-    end
+    verbose && (@info "End:" completion = complete converged = conv nsim = sum(nsims) range_ϵ = extrema(Δs))
+    
     θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
     # l = length(prior)
     # P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)

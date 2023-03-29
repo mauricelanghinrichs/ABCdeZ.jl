@@ -178,7 +178,8 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     nparticles_min ≤ nparticles || error("nparticles must be at least $(nparticles_min)")
 
     parallel ? ex=ThreadedEx() : ex=SequentialEx()
-    @info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex))
+    verbose && (@info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex)))
+    verbose && (@info "Running abcdesmc! with" ϵ_target nparticles α δess nsims_max Kmcmc ABCk facc_min facc_tune rng parallel verboseout)
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
@@ -305,17 +306,13 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
             push!(γ0s, γ0)
         end
 
-        if verbose
-            @info "Finished run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ
-        end
+        verbose && (@info "Finished run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
 
         # stopping criterion
         (ϵ ≤ ϵ_target || sum(nsims) ≥ nsims_max) && break
     end
 
-    if verbose
-        @info "Final run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ
-    end
+    verbose && (@info "Final run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
 
     ### report results
     θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
