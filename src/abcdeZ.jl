@@ -16,5 +16,4 @@ module ABCdeZ
 
     include("abcde_smc.jl")
     export abcdesmc!
-
 end
