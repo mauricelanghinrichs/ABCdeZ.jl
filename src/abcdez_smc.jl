@@ -160,7 +160,7 @@ end
 ### main smc
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, 
-                δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=1, 
+                δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=3, 
                 ABCk=Indicator0toϵ, facc_min=0.25, facc_tune=0.95,
                 verbose::Bool=true, verboseout::Bool=true, 
                 rng=Random.GLOBAL_RNG, parallel::Bool=false)
