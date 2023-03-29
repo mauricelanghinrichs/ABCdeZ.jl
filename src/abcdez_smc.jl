@@ -137,6 +137,8 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
         # DE move above is symmetric, hence min criterion 
         # simplifies to prior and ABC kernel ratios
         lπ = logpdf(prior, push_p(prior, θp.x))
+        lπ < 0.0 && (isinf(lπ)) && continue
+
         dp, blob = dist!(push_p(prior, θp.x), ve)
         nsims[i] += 1
 
