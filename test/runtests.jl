@@ -159,6 +159,84 @@ end
     @test isaround([t[1] for t in r.P[r.Wns .> 0.0]], mean(dposterior))
 end
 
+@testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdemc!)" begin
+    # tests copied and/or adapted from KissABC.jl
+    function model((n_socks, prop_pairs), consts)
+        n_picked = 11
+        n_pairs = round(Int, prop_pairs * floor(n_socks / 2))
+        n_odd = n_socks - 2 * n_pairs
+        socks = sort([repeat(1:n_pairs, 2); (n_pairs+1):(n_pairs+n_odd)])
+        picked_socks = socks[randperm(n_socks)][1:min(n_socks, n_picked)]
+        lu = length(unique(picked_socks))
+        sample_pairs = min(n_socks, n_picked) - lu
+        sample_odds = lu - sample_pairs
+        sample_pairs, sample_odds
+    end
+
+    prior_mu = 30
+    prior_sd = 15
+    prior_size = -prior_mu^2 / (prior_mu - prior_sd^2)
+
+    pr_socks = NegativeBinomial(prior_size, prior_size / (prior_mu + prior_size))
+    pr_prop = Beta(15, 2)
+    prior = ABCdeZ.Factored(pr_socks, pr_prop)
+
+    tinydata = (0, 11)
+
+    dist!(θ, ve) = sum(abs, model(θ, 0) .- tinydata), nothing
+    rmc = abcdemc!(prior, dist!, 0.01, nothing, nparticles=5000, generations=500, verbose=false)
+
+    @test isaround([t[1] for t in rmc.P], 46.2)
+    @test isaround([t[2] for t in rmc.P], 0.866)
+end
+
+@testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdesmc!)" begin
+    # here we define a new ABC kernel that changes the default kernel support
+    # from 0.0 ≤ x ≤ d.ϵ to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
+    struct Indicator0toϵ2 <: ContinuousUnivariateDistribution
+        ϵ::Float64
+
+        function Indicator0toϵ2(ϵ)
+            ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+            new(ϵ)
+        end
+    end
+    Distributions.insupport(d::Indicator0toϵ2, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
+    Distributions.pdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 1.0 : 0.0
+    Distributions.logpdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 0.0 : -Inf
+
+    # tests copied and/or adapted from KissABC.jl
+    function model((n_socks, prop_pairs), consts)
+        n_picked = 11
+        n_pairs = round(Int, prop_pairs * floor(n_socks / 2))
+        n_odd = n_socks - 2 * n_pairs
+        socks = sort([repeat(1:n_pairs, 2); (n_pairs+1):(n_pairs+n_odd)])
+        picked_socks = socks[randperm(n_socks)][1:min(n_socks, n_picked)]
+        lu = length(unique(picked_socks))
+        sample_pairs = min(n_socks, n_picked) - lu
+        sample_odds = lu - sample_pairs
+        sample_pairs, sample_odds
+    end
+
+    prior_mu = 30
+    prior_sd = 15
+    prior_size = -prior_mu^2 / (prior_mu - prior_sd^2)
+
+    pr_socks = NegativeBinomial(prior_size, prior_size / (prior_mu + prior_size))
+    pr_prop = Beta(15, 2)
+    prior = ABCdeZ.Factored(pr_socks, pr_prop)
+
+    tinydata = (0, 11)
+
+    dist!(θ, ve) = sum(abs, model(θ, 0) .- tinydata), nothing
+
+    ABCk = Indicator0toϵ2
+    rsmc = abcdesmc!(prior, dist!, 0.01, nothing, nparticles=5000, ABCk=ABCk, verbose=false)
+
+    @test isaround([t[1] for t in rsmc.P[rsmc.Wns .> 0.0]], 46.2)
+    @test isaround([t[2] for t in rsmc.P[rsmc.Wns .> 0.0]], 0.866)
+end
+
 @testset "Normal dist -> Dirac Delta inference, Parallel" begin
     # tests copied and/or adapted from KissABC.jl
     prior = Normal(1, 0.2)
