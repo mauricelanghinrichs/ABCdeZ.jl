@@ -159,6 +159,54 @@ end
     @test isaround([t[1] for t in r.P[r.Wns .> 0.0]], mean(dposterior))
 end
 
+@testset "Evidence / Bayes factor" begin
+    ### IDEA: model evidences should be off by the same factor that  
+    ### describes the fold-volume change of the uniform priors; 
+    ### here factor ≈ 2.0 is we go from Uniform(-20, 20) to Uniform(-10, 10)
+    ### (with posterior not contrained by neither of the two)
+    ### (with uniform model priors 2 is also roughly the Bayes factor)
+
+    ### ground truth values (computed with ABC rejection from 10^8 samples)
+    Z_rejection_1 = 0.02998511
+    Z_rejection_2 = 0.01500489
+
+    ### setup
+    xdata = 3 # 3, 5, 7
+    dprior1 = Uniform(-10, 10)
+    dprior2 = Uniform(-20, 20)
+    dmodel(μ) = Normal(μ, 1) # for likelihood
+
+    ϵ = 0.3
+    dist!(θ, ve) = abs(rand(dmodel(θ)) - xdata), nothing
+
+    ### evidence1 (using abcdesmc!)
+    r1 = abcdesmc!(dprior1, dist!, ϵ, nothing,
+                        nparticles=5000, verbose=false, 
+                        verboseout=true, parallel=true)
+
+    Zest1 = exp(r1.logZ)
+    println("Z abcdesmc! 1 = ", Zest1)
+    @test Z_rejection_1 * 0.8 ≤ Zest1 ≤ 1.2 * Z_rejection_1
+
+    ### evidence2 (using abcdesmc!)
+    r2 = abcdesmc!(dprior2, dist!, ϵ, nothing,
+                        nparticles=5000, verbose=false, 
+                        verboseout=true, parallel=true)
+
+    Zest2 = exp(r2.logZ)
+    println("Z abcdesmc! 1 = ", Zest2)
+    @test Z_rejection_2 * 0.8 ≤ Zest2 ≤ 1.2 * Z_rejection_2
+
+    ### factor check (around 2)
+    @test 2.0 * 0.8 ≤ Zest1/Zest2 ≤ 2.0 * 1.2
+
+    ### posterior checks
+    println("Posterior mean abcdesmc! 1 = ", mean([t[1] for t in r1.P[r1.Wns .> 0.0]]))
+    println("Posterior mean abcdesmc! 2 = ", mean([t[1] for t in r2.P[r2.Wns .> 0.0]]))
+    @test isaround([t[1] for t in r1.P[r1.Wns .> 0.0]], xdata)
+    @test isaround([t[1] for t in r2.P[r2.Wns .> 0.0]], xdata)
+end
+
 @testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdemc!)" begin
     # tests copied and/or adapted from KissABC.jl
     function model((n_socks, prop_pairs), consts)
