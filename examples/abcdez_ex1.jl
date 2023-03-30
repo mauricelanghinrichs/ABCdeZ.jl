@@ -94,12 +94,16 @@ blobs = r.blobs[r.Wns .> 0.0]
 #   abcdesmc!; as the evidence values are (typically) off by the 
 #   normalisation constant, different models (each inferred from a separate 
 #   ABC run) have to be compared with logZs computed for the SAME ϵ 
-#   (then the unknown normalisation constants cancel and don't matter),
+#   (then the unknown normalisation constants cancel and don't matter)
 #   (of course, next to the same data and distance method);
 
 #   for example posterior model probabilities are computed like this 
 #   (for a uniform model prior)
 m1_evidence = evidence # evidence of model 1 from above
-m2_evidence = 0.008 # from some other ABC run 
-m1_prob = m1evid / (m1evid + m2evid) # posterior prob. model 1
-m2_prob = m2evid / (m1evid + m2evid) # posterior prob. model 2
+m2_evidence = 0.008 # from some other ABC run
+
+m1_prior = 0.5 # model priors (uniform here)
+m2_prior = 0.5
+
+m1_prob = m1evid*m1_prior / (m1evid*m1_prior + m2evid*m2_prior) # posterior prob. model 1
+m2_prob = m2evid*m2_prior / (m1evid*m1_prior + m2evid*m2_prior) # posterior prob. model 2
