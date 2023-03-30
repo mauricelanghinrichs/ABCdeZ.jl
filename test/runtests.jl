@@ -88,7 +88,7 @@ end
     println("Z abcdesmc! = ", Zest)
     @test evidence_exact_indicator * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_indicator
 
-     ### using abcdemc! method for posterior only
+    ### using abcdemc! method for posterior only
     rmc = abcdemc!(dprior, dist!, ϵ, nothing,
                         nparticles=5000, generations=500,
                         verbose=false, parallel=true)
@@ -143,7 +143,7 @@ end
     println("Z abcdesmc! = ", Zest)
     @test evidence_exact_indicator * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_indicator
 
-     ### using abcdemc! method for posterior only
+    ### using abcdemc! method for posterior only
     rmc = abcdemc!(dprior, dist!, ϵ, nothing,
                         nparticles=5000, generations=500,
                         verbose=false, parallel=true)
@@ -162,7 +162,7 @@ end
 @testset "Evidence / Bayes factor" begin
     ### IDEA: model evidences should be off by the same factor that  
     ### describes the fold-volume change of the uniform priors; 
-    ### here factor ≈ 2.0 is we go from Uniform(-20, 20) to Uniform(-10, 10)
+    ### here factor ≈ 2.0 as we go from Uniform(-20, 20) to Uniform(-10, 10)
     ### (with posterior not contrained by neither of the two)
     ### (with uniform model priors 2 is also roughly the Bayes factor)
 
@@ -205,6 +205,69 @@ end
     println("Posterior mean abcdesmc! 2 = ", mean([t[1] for t in r2.P[r2.Wns .> 0.0]]))
     @test isaround([t[1] for t in r1.P[r1.Wns .> 0.0]], xdata)
     @test isaround([t[1] for t in r2.P[r2.Wns .> 0.0]], xdata)
+end
+
+@testset "1d Normal with Evidence / Kernel 2" begin
+    # here we define a new ABC kernel that changes the default kernel support
+    # from 0.0 ≤ x ≤ d.ϵ to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
+    struct Indicator0toϵ2 <: ContinuousUnivariateDistribution
+        ϵ::Float64
+
+        function Indicator0toϵ2(ϵ)
+            ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+            new(ϵ)
+        end
+    end
+    Distributions.insupport(d::Indicator0toϵ2, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
+    Distributions.pdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 1.0 : 0.0
+    Distributions.logpdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 0.0 : -Inf
+
+    ###
+    xdata = 3 # 3, 5, 7
+    dprior = Normal(0, sqrt(10))
+    dposterior = Normal(10/11*xdata, sqrt(10/11))
+    dmodel(μ) = Normal(μ, 1) # for likelihood
+    evidence_exact = pdf(Normal(0, sqrt(11)), xdata)
+
+    ϵ = 0.3
+    # exact "unnormalised" evidence
+    evidence_exact_indicator = evidence_exact * 2ϵ
+    println("Z exact = ", evidence_exact_indicator)
+    @test isapprox(0.047940112540007955, evidence_exact_indicator)
+
+    ### ABC rejection and model evidence with unnormalised indicator kernel
+    nsamples = Int(1e6)
+    sprior = rand(dprior, nsamples)
+    smodel = rand.(dmodel.(sprior))
+
+    k_indicator = (abs.(smodel .- xdata) .< ϵ)
+
+    saccept = k_indicator .> 0.0
+    sposterior = sprior[saccept]
+
+    # direct Monte Carlo evidence estimation (from prior samples)
+    Zest = mean(k_indicator)
+    println("Z rejection = ", Zest)
+    @test evidence_exact_indicator * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_indicator
+
+    ### using abcdesmc! method for evidence and posterior
+    dist!(θ, ve) = abs(rand(dmodel(θ)) - xdata), nothing
+
+    r = abcdesmc!(dprior, dist!, ϵ, nothing, ABCk=Indicator0toϵ2,
+                        nparticles=5000, verbose=false, 
+                        verboseout=true, parallel=true)
+
+    Zest = exp(r.logZ)
+    println("Z abcdesmc! = ", Zest)
+    @test evidence_exact_indicator * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_indicator
+
+    println("Posterior mean exact = ", mean(dposterior))
+    println("Posterior mean rejection = ", mean(sposterior))
+    println("Posterior mean abcdesmc! = ", mean([t[1] for t in r.P[r.Wns .> 0.0]]))
+
+    @test isapprox(2.727272727272727, mean(dposterior))
+    @test isaround(sposterior, mean(dposterior))
+    @test isaround([t[1] for t in r.P[r.Wns .> 0.0]], mean(dposterior))
 end
 
 @testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdemc!)" begin
