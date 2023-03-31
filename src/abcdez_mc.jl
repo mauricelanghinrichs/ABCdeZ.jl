@@ -63,6 +63,19 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
     end
 end
 
+"""
+    bar(x[, y])
+
+Compute the Bar index between `x` and `y`.
+
+If `y` is unspecified, compute the Bar index between all pairs of columns of `x`.
+
+# Examples
+```julia-repl
+julia> bar([1, 2], [1, 2])
+1
+```
+"""
 function abcdemc!(prior, dist!, ϵ_target, varexternal; 
                 nparticles::Int=50, generations::Int=20, α=0.0, 
                 verbose=true, rng=Random.GLOBAL_RNG, parallel::Bool=false)

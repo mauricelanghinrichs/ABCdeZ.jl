@@ -158,6 +158,19 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
 end
 
 ### main smc
+"""
+    bar(x[, y])
+
+Compute the Bar index between `x` and `y`.
+
+If `y` is unspecified, compute the Bar index between all pairs of columns of `x`.
+
+# Examples
+```julia-repl
+julia> bar([1, 2], [1, 2])
+1
+```
+"""
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, 
                 δess=0.5, nsims_max::Int=10^7, Kmcmc::Int=3, 
