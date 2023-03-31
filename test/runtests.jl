@@ -8,6 +8,8 @@ Random.seed!(1)
 
 isaround(θ, val; f=1.0) = (mean(θ) - f*std(θ) ≤ val ≤ mean(θ)+ f*std(θ))
 
+print("Available threads (for tests in parallel mode) = $(Threads.nthreads()) \n")
+
 @testset "Factored" begin
     # tests copied and/or adapted from KissABC.jl
     d = Factored(Uniform(0, 1), Uniform(100, 101))
