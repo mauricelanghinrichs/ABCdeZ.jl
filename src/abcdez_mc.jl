@@ -72,16 +72,16 @@ providing posterior samples.
 Algorithm needs to converge for an unbiased posterior estimate.
 
 # Arguments
-- `prior`: `Distribution` or `Factored` object for the parameter prior.
+- `prior`: `Distribution` or `Factored` object specifying the parameter prior.
 - `dist!`: distance function computing the distance (`≥ 0.0`) between model and data, 
     for given `(θ, ve)` input (`θ` parameters, `ve` external variables, see `varexternal`).
 - `ϵ_target`: target distance (or more general, target width of the ABC kernel); algorithm 
-    stops if `ϵ_target` or `nsims_max` is reached.
+    equilibrates to posterior if `ϵ_target` is reached.
 - `varexternal`: external variables that are passed as second positional argument to `dist!` 
     and can be used to support the distance computation with fast in-place operations in 
-    a thread-safe manner; objects in `varexternal` can be in-place mutated, even in parallel mode, 
-    as each thread-base will receive its own copy of `varexternal`.
-- `nparticles::Int=50`: number of total particles to use for inference.
+    a thread-safe manner; objects in `varexternal` can be in-place mutated, even in `parallel` mode, 
+    as each thread-base will receive its own copy of `varexternal` (if not needed input `nothing`).
+- `nparticles::Int=50`: number of total particles to use for inference in each generation.
 - `generations::Int=20`: number of generations (iterations) to run the algorithm.
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
 - `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
