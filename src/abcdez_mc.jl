@@ -82,7 +82,7 @@ Algorithm needs to converge for an unbiased posterior estimate.
     a thread-safe manner; objects in `varexternal` can be in-place mutated, even in `parallel` mode, 
     as each thread-base will receive its own copy of `varexternal` (if not needed input `nothing`).
 - `nparticles::Int=50`: number of total particles to use for inference in each generation.
-- `generations::Int=20`: number of generations (iterations) to run the algorithm.
+- `generations::Int=20`: number of generations (total iterations) to run the algorithm.
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
 - `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
