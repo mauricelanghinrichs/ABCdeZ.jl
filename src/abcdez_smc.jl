@@ -159,16 +159,53 @@ end
 
 ### main smc
 """
-    bar(x[, y])
+    abcdesmc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>)
 
-Compute the Bar index between `x` and `y`.
+Run ABC with diffential evolution (de) moves in a sequential Monte Carlo setup (smc) 
+providing posterior samples and a model evidence estimate.
 
-If `y` is unspecified, compute the Bar index between all pairs of columns of `x`.
+The particles have to be weighted (via `r.Wns`) for valid posterior samples.
+
+# Arguments
+- `prior`: `Distribution` or `Factored` object for the parameter prior.
+- `dist!`: distance function computing the distance (`≥ 0.0`) between model and data, 
+    for given `(θ, ve)` input (`θ` parameters, `ve` external variables, see `varexternal`).
+- `ϵ_target`: target distance (or more general, target width of the ABC kernel); algorithm 
+    stops if `ϵ_target` or `nsims_max` is reached.
+- `varexternal`: external variables that are passed as second positional argument to `dist!` 
+    and can be used to support the distance computation with fast in-place operations in 
+    a thread-safe manner; objects in `varexternal` can be in-place mutated, even in parallel mode, 
+    as each thread-base will receive its own copy of `varexternal`.
+- `nparticles::Int=100`: number of total particles to use for inference.
+- `α=0.95`: used for adaptive choice of ϵ specifying the sequential target distributions; technically, 
+    ϵ will be the `α`-quantile of current particle distances.
+- `δess=0.5`: if the fractional effective sample size drops below `δess`, a stratified resampling step is performed.
+- `nsims_max::Int=10^7`: maximal number of `dist!` evaluations (except initial samples); 
+    algorithm stops if `ϵ_target` or `nsims_max` is reached.
+- `Kmcmc::Int=3`: number of MCMC (Markov chain Monte Carlo) steps at each sequential 
+    target distribution specified by current ϵ and ABC kernel type.
+- `ABCk=ABCdeZ.Indicator0toϵ`: ABC kernel to be specified by ϵ widths that receives distance values 
+- `facc_min=0.25`: if the fractional MCMC acceptance rate drops below `facc_min`, diffential evolution 
+    proposal steps are reduced by a factor of `facc_tune`.
+- `facc_tune=0.95`: factor to reduce the jump distance of the diffential evolution 
+    proposals in the MCMC step (used if `facc_min` is reached).
+- `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
+- `verboseout::Bool=true`: if set to `true`, algorithm returns a more detailed inference output.
+- `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
+- `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
+    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`).
 
 # Examples
 ```julia-repl
-julia> bar([1, 2], [1, 2])
-1
+julia> using ABCdeZ, Distributions;
+julia> data = 5;
+julia> prior = Normal(0, sqrt(10));
+julia> model(θ) = rand(Normal(θ, 1));
+julia> dist!(θ, ve) = abs(model(θ)-data), nothing;
+julia> ϵ = 0.3;
+julia> r = abcdesmc!(prior, dist!, ϵ, nothing, nparticles=1000, parallel=true);
+julia> posterior = [t[1] for t in r.P[r.Wns .> 0.0]];
+julia> evidence = exp(r.logZ);
 ```
 """
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
