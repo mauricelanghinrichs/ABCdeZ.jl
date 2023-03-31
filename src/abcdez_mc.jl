@@ -64,24 +64,48 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
 end
 
 """
-    bar(x[, y])
+    abcdemc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>)
 
-Compute the Bar index between `x` and `y`.
+Run ABC with diffential evolution (de) moves in a Markov chain Monte Carlo setup (mc) 
+providing posterior samples.
 
-If `y` is unspecified, compute the Bar index between all pairs of columns of `x`.
+Algorithm needs to converge for an unbiased posterior estimate.
+
+# Arguments
+- `prior`: `Distribution` or `Factored` object for the parameter prior.
+- `dist!`: distance function computing the distance (`≥ 0.0`) between model and data, 
+    for given `(θ, ve)` input (`θ` parameters, `ve` external variables, see `varexternal`).
+- `ϵ_target`: target distance (or more general, target width of the ABC kernel); algorithm 
+    stops if `ϵ_target` or `nsims_max` is reached.
+- `varexternal`: external variables that are passed as second positional argument to `dist!` 
+    and can be used to support the distance computation with fast in-place operations in 
+    a thread-safe manner; objects in `varexternal` can be in-place mutated, even in parallel mode, 
+    as each thread-base will receive its own copy of `varexternal`.
+- `nparticles::Int=50`: number of total particles to use for inference.
+- `generations::Int=20`: number of generations (iterations) to run the algorithm.
+- `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
+- `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
+- `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
+    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`).
 
 # Examples
 ```julia-repl
-julia> bar([1, 2], [1, 2])
-1
+julia> using ABCdeZ, Distributions;
+julia> data = 5;
+julia> prior = Normal(0, sqrt(10));
+julia> model(θ) = rand(Normal(θ, 1));
+julia> dist!(θ, ve) = abs(model(θ)-data), nothing;
+julia> ϵ = 0.3;
+julia> r = abcdemc!(prior, dist!, ϵ, nothing, nparticles=1000, generations=300, parallel=true);
+julia> posterior = [t[1] for t in r.P];
 ```
 """
 function abcdemc!(prior, dist!, ϵ_target, varexternal; 
-                nparticles::Int=50, generations::Int=20, α=0.0, 
+                nparticles::Int=50, generations::Int=20,
                 verbose=true, rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
     ### initialisation
-    0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
+    α = 0.0 # 0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative")
     5 ≤ nparticles || error("nparticles must be at least 5")
     1 ≤ generations || error("generations must be at least 1")
