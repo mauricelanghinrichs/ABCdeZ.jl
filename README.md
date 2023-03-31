@@ -1,5 +1,9 @@
 # ABCdeZ.jl
 
+[![CI](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/mauricelanghinrichs/ABCdeZ.jl/branch/main/graph/badge.svg?token=BZ86DWE65S)](https://codecov.io/gh/mauricelanghinrichs/ABCdeZ.jl)
+
+
 # sync/document github
 # - two example files for both alg.
 # - add docs
