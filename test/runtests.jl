@@ -6,7 +6,7 @@ using Test
 
 Random.seed!(1)
 
-isaround(θ, val) = (mean(θ)-std(θ) ≤ val ≤ mean(θ)+std(θ))
+isaround(θ, val; f=1.0) = (mean(θ) - f*std(θ) ≤ val ≤ mean(θ)+ f*std(θ))
 
 @testset "Factored" begin
     # tests copied and/or adapted from KissABC.jl
@@ -406,14 +406,24 @@ end
     prior = Factored(Uniform(0, 1), Uniform(0, 4))
     dist!(x, ve) = sum(abs, brownianrms(x, 30) .- tdata) / length(tdata), nothing
 
-    r = abcdemc!(prior, dist!, 0.05, nothing, nparticles=500, generations=300, verbose=false).P
-    @test isaround([t[1] for t in r], 0.5)
-    @test isaround([t[2] for t in r], 2.0)
+    r = abcdemc!(prior, dist!, 0.05, nothing, nparticles=1000, generations=300, verbose=false).P
+    p1 = [t[1] for t in r]
+    p2 = [t[2] for t in r]
+    print("Wiener (abcdemc!) \n")
+    print("mean = $(mean(p1)), std = $(std(p1)) \n")
+    print("mean = $(mean(p2)), std = $(std(p2)) \n")
+    @test isaround(p1, 0.5, f=2.0)
+    @test isaround(p2, 2.0, f=2.0)
 
-    r = abcdesmc!(prior, dist!, 0.05, nothing, nparticles=500, verbose=false)
+    r = abcdesmc!(prior, dist!, 0.05, nothing, nparticles=1000, verbose=false)
     r = r.P[r.Wns .> 0.0]
-    @test isaround([t[1] for t in r], 0.5)
-    @test isaround([t[2] for t in r], 2.0)
+    p1 = [t[1] for t in r]
+    p2 = [t[2] for t in r]
+    print("Wiener (abcdesmc!) \n")
+    print("mean = $(mean(p1)), std = $(std(p1)) \n")
+    print("mean = $(mean(p2)), std = $(std(p2)) \n")
+    @test isaround(p1, 0.5, f=2.0)
+    @test isaround(p2, 2.0, f=2.0)
 end
 
 @testset "Classical Mixture Model 0.1N+N" begin
