@@ -77,17 +77,17 @@ abcdesmc!
 
     The model evidence estimates from the `abcdesmc!` method obtained by the default ABC 
     indicator kernel are off by a normalisation factor coming from an unnormalised 
-    kernel (in the final iteration). To do model selection / comparison 
+    kernel (the one used in the final iteration). To do model selection / comparison 
     this means that evidence estimates for the set of models have to be done for the same 
     data (or summary statistics), distance function, ABC kernel *and* the same target 
     ϵ (which is `ϵ_target` if run not stopped by `nsims_max`). Then the (unknown) 
     normalisation factor is the same for all models and does not matter (cancels) for 
-    Bayes factor or posterior model probabilities. See [here](#More-on-model-evidences)
+    Bayes factors or posterior model probabilities. See [here](#More-on-model-evidences)
     for workarounds if ϵ is not the same.
 
 !!! tip "Uncertainty of model evidence"
 
-    As of now the `abcdesmc!` method does not provide an uncertainty for the model evidence 
+    As of now the `abcdesmc!` method does not provide a (numerical) uncertainty for the model evidence 
     estimate from a single run. It may be however very useful to check for this when doing 
     model comparison (as the resulting Bayes factors or posterior model probabilities are 
     uncertain as well). So, if the runtime permits, run the `abcdesmc!` method multiple times 
@@ -176,7 +176,7 @@ explain here what to do when same eps difficult (link goes here...)
     (`dist!(θ, ve) = abs(model(θ)-data), nothing`) 
     `ve` are "external variables" (`varexternal` in `abcdesmc!`) that can 
     be used in the distance computation and mutated in-place, even in the parallel mode 
-    (each thread base will obtain its own copy for thread-safe parallel ABC runs).
+    (each thread will obtain its own copy for thread-safe parallel ABC runs).
     `ve` is passed as 4th positional argument to `abcdesmc!` (`nothing` in the 
     minimal example).
 
@@ -211,8 +211,8 @@ explain here what to do when same eps difficult (link goes here...)
 ## References
 
 - Some part of the code was copied, adapted and/or inspired by KissABC.jl [^1]. For example, 
-    the `Factored` syntax was adopted, `abcdemc!` is based on `ABCDE`, `abcdesmc!` is inspired 
-    by `smc`. We thank the developers of the package.
+    the `Factored` syntax was adopted, `abcdemc!` is based on `ABCDE`, `abcdesmc!` is loosely based on 
+    `smc`. We thank the developers of the package.
 - A very good theory background for the general approach of model evidences from single ABC runs 
     is given by Didelot et al. (2011) [^2]. More details on algorithms (in the likelihood-context) is found in Llorente et al. (2020) [^3].
 - The differential evolution moves are introduced in Ter Braak (2006) [^4].

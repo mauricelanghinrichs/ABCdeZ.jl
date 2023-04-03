@@ -170,12 +170,12 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
 - `prior`: `Distribution` or `Factored` object specifying the parameter prior.
 - `dist!`: distance function computing the distance (`≥ 0.0`) between model and data, 
     for given `(θ, ve)` input (`θ` parameters, `ve` external variables, see `varexternal`).
-- `ϵ_target`: target distance (or more general, target width of the ABC kernel); algorithm 
+- `ϵ_target`: final target distance (or more general, target width of the ABC kernel); algorithm 
     stops if `ϵ_target` or `nsims_max` is reached.
 - `varexternal`: external variables that are passed as second positional argument to `dist!` 
     and can be used to support the distance computation with fast in-place operations in 
     a thread-safe manner; objects in `varexternal` can be in-place mutated, even in `parallel` mode, 
-    as each thread-base will receive its own copy of `varexternal` (if not needed input `nothing`).
+    as each thread will receive its own copy of `varexternal` (if not needed input `nothing`).
 - `nparticles::Int=100`: number of total particles to use for inference.
 - `α=0.95`: used for adaptive choice of ϵ specifying the sequential target distributions; technically, 
     ϵ will be the `α`-quantile of current particle distances.
