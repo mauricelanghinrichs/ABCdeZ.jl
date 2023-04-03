@@ -19,12 +19,16 @@ CurrentModule = ABCdeZ
 
 ## Minimal example
 
-```@raw html
-    <img src="./src/assets/abcdez_min_ex_post.png" width="539">
-```
+test test 
 
 ```@raw html
-    <img src="./src/assets/abcdez_min_ex_model_sel.png" width="305">
+<img src="../src/assets/abcdez_min_ex_post.png" width="539">
+```
+
+test test 
+
+```@raw html
+<img src="../src/assets/abcdez_min_ex_model_sel.png" width="305">
 ```
 
 this code here should match the script in examples folder on github; 
