@@ -21,21 +21,11 @@ CurrentModule = ABCdeZ
 
 
 ```@raw html
-<img src="https://github.com/mauricelanghinrichs/ABCdeZ.jl/blob/main/docs/src/assets/abcdez_min_ex_model_sel.png
-" width="539">
+<img src="./assets/abcdez_min_ex_post.png" width="539">
 ```
 
-
-test test 
-
 ```@raw html
-<img src="../src/assets/abcdez_min_ex_post.png" width="539">
-```
-
-test test 
-
-```@raw html
-<img src="../src/assets/abcdez_min_ex_model_sel.png" width="305">
+<img src="./assets/abcdez_min_ex_model_sel.png" width="305">
 ```
 
 this code here should match the script in examples folder on github; 
