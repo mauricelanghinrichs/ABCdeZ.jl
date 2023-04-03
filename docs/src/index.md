@@ -17,50 +17,130 @@ CurrentModule = ABCdeZ
   evidence estimate (up to (final) kernel norm))
 - link to all the caveats of ABC-based evidence values
 
+Here's some inline maths: ``\sqrt[n]{1 + x + x^2 + \ldots}``.
+
+To write a system of equations, use the `aligned` environment:
+
+```math
+\begin{aligned}
+\nabla\cdot\mathbf{E}  &= 4 \pi \rho \\
+\nabla\cdot\mathbf{B}  &= 0 \\
+\nabla\times\mathbf{E} &= - \frac{1}{c} \frac{\partial\mathbf{B}}{\partial t} \\
+\nabla\times\mathbf{B} &= - \frac{1}{c} \left(4 \pi \mathbf{J} + \frac{\partial\mathbf{E}}{\partial t} \right)
+\end{aligned}
+```
+
+These are Maxwell's equations.
+
 ## Minimal example
 
+Here we will use ABCdeZ.jl to infer the model evidences and posterior distributions within a simple toy example. The models have a single parameter ``θ`` that is, *a priori*, normally distributed (prior). After seeing one single data point, we obtain an updated posterior knowledge. To obtain model evidences, next to the posterior samples, we will use the [```abcdesmc!```](#Inference-by-abcdesmc!) method; for posterior samples only one may also use ```abcdemc!``` with a very similar syntax as seen in an [code example](#Inference-by-abcdemc!).
 
-```@raw html
-<img src="./assets/abcdez_min_ex_post.png" width="539">
-```
+ABCdeZ.jl (as ABC in general) requires model simulations (for samples of ``θ``) only, and not the likelihood values (at these ``θ``). However, in this simple example the likelihood is available and chosen in a way (also Normal) that the prior is conjugate, and the exact posterior distributions and evidences are known analytically. We will compare the inferences made by ABCdeZ.jl with the analytical counterparts.
 
-```@raw html
-<img src="./assets/abcdez_min_ex_model_sel.png" width="305">
-```
-
-this code here should match the script in examples folder on github; 
-and then maybe on github just put the png image
-
-current idea: use current example but add a second model 
-with a slightly larger Normal prior (and also change model / likelihood / simulation itself? maybe 
-variation in the Normal from 1.0 to something?); try to calculate 
-evidence also for the second model analytical; in the end make 
-a nice png with three plots (posterior model 1 and 2 (from the different priors) and a third 
-plot showing the model probabilities (or evidences?) between smc output and analytical also); 
-also as a final line compute posterior by abcdemc! version (just for the posterior, 
-not likelihood)
-
-- model comparison can be done with the model evidences obtained by 
-  abcdesmc!; as the evidence values are (typically) off by the 
-  normalisation constant, different models (each inferred from a separate 
-  ABC run) have to be compared with logZs computed for the SAME ϵ 
-  (then the unknown normalisation constants cancel and don't matter)
-  (of course, next to the same data and distance method);
-
-  for example posterior model probabilities are computed like this 
-  (for a uniform model prior)
-
+We load the required packages, set the single data point and the target ``ϵ`` for the ABC runs.
 
 ```julia
-    m1_evidence = evidence # evidence of model 1 from above
-    m2_evidence = 0.008 # from some other ABC run
+using ABCdeZ
+using Distributions
 
-    m1_prior = 0.5 # model priors (uniform here)
-    m2_prior = 0.5
+### data
+data = 3
 
-    m1_prob = m1evid*m1_prior / (m1evid*m1_prior + m2evid*m2_prior) # posterior prob. model 1
-    m2_prob = m2evid*m2_prior / (m1evid*m1_prior + m2evid*m2_prior) # posterior prob. model 2
+### ABC target ϵ (maximum distance)
+ϵ = 0.3
 ```
+
+Then we set up the inference of a first model. The normal prior is specified via ```Distributions``` (see "Prior" box below). Note that the model is solely specified by a 
+random simulation for a given ``θ``. The distance function here simply reports the absolute distance between the random model output and the single data point.
+
+```julia
+### model 1 inference
+σ₁² = 10
+prior1 = Normal(0, sqrt(σ₁²))
+
+# model simulation (to replace likelihood)
+model1(θ) = rand(Normal(θ, 1))
+
+# distance function between model and data
+dist1!(θ, ve) = abs(model1(θ)-data), nothing
+```
+
+With the following line we run the ```abcdesmc!``` method of ABCdeZ.jl. The inference result is stored in ```r1```.
+
+```julia
+### ABC run
+# run the smc method for model 1
+r1 = abcdesmc!(prior1, dist1!, ϵ, nothing, 
+                    nparticles=1000, parallel=true)
+```
+
+From the result ```r1``` we can read out the posterior samples (important: weighted by ```Wns```, 
+see box "Posterior sample weights" [here](#Inference-by-abcdesmc!)) and the estimated model evidence for model 1 (transforming back from log-scale).
+
+```julia
+### process results
+# posterior parameters
+posterior1 = [t[1] for t in r1.P[r1.Wns .> 0.0]]
+
+# model evidence (logZ is the logarithmic evidence)
+evidence1 = exp(r1.logZ)
+```
+
+Plotting the ```posterior1``` samples as a histogram, one can see the gained knowledge from the 
+prior just by the single data point (Figure below, left panel). The samples also match the analytical posterior, available in this simple example.
+
+```@raw html
+<img src="./assets/abcdez_min_ex_post.png" width="566">
+```
+
+To demonstrate model comparison enabled by ABCdeZ.jl, we now repeat the procedure with a 
+second model. Here, for simplicity, model 2 only differs from model 1 in the prior; of course 
+in more interesting settings, not only the prior, but the whole architecture of models 
+may be different (kind of and/or number of parameters). Any models can be compared in principle; 
+as long as inferences are done for the same (summary) data (and simulations always match the structure of the data), distance method (here ```abs()```) and 
+target ``ϵ``. The same target ``ϵ`` is important in ABCdeZ.jl due to the (typically) unnormalised 
+ABC kernel (see box "Model evidence (off by a factor)" [here](#Inference-by-abcdesmc!); if not possible, advanced info [here](#More-on-model-evidences)).
+
+```julia
+### model 2 inference
+σ₂² = 100
+prior2 = Normal(0, sqrt(σ₂²))
+
+model2(θ) = model1(θ)
+
+dist2!(θ, ve) = abs(model2(θ)-data), nothing
+
+r2 = abcdesmc!(prior2, dist2!, ϵ, nothing, 
+                    nparticles=1000, parallel=true)
+
+posterior2 = [t[1] for t in r2.P[r2.Wns .> 0.0]]
+evidence2 = exp(r2.logZ)
+```
+
+The posterior inference of model 2 is visually very similar to model 1, except the difference in the prior (Figure above, right panel).
+
+Finally, the estimated evidences can be used to compute posterior model probabilities. The model prior is uniform between the two models here.
+
+```julia
+### model probabilities
+# model priors (uniform here)
+mprior1 = 0.5
+mprior2 = 0.5
+
+# model posterior probabilities
+mposterior1 = evidence1*mprior1 / (evidence1*mprior1 + evidence2*mprior2) # posterior prob. model 1
+mposterior2 = evidence2*mprior2 / (evidence1*mprior1 + evidence2*mprior2) # posterior prob. model 2
+```
+
+The model probabilities can be visually compared (Figure below), recovering the exact analytical results. Note that evidence values by ABCdeZ.jl are numerically uncertain (see box "Uncertainty of model evidence" [here](#Inference-by-abcdesmc!)); as such the figure below also shows evidence values from repeated runs.
+
+```@raw html
+<img src="./assets/abcdez_min_ex_model_sel.png" width="320">
+```
+
+The complete code for this minimal example, including the derivation of the 
+analytical counterparts, can be found on [GitHub](https://github.com/mauricelanghinrichs/ABCdeZ.jl/blob/main/examples/minimal_example.jl).
 
 !!! note "Prior"
 
