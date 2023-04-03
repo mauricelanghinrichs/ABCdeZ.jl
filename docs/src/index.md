@@ -19,6 +19,10 @@ CurrentModule = ABCdeZ
 
 ## Minimal example
 
+<img src="./src/assets/abcdez_min_ex_post.png" width="539">
+
+<img src="./src/assets/abcdez_min_ex_model_sel.png" width="305">
+
 this code here should match the script in examples folder on github; 
 and then maybe on github just put the png image
 
@@ -209,6 +213,9 @@ explain here what to do when same eps difficult (link goes here...)
     ```
 
 ## References
+
+ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by 
+[Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker.
 
 - Some part of the code was copied, adapted and/or inspired by KissABC.jl [^1]. For example, 
     the `Factored` syntax was adopted, `abcdemc!` is based on `ABCDE`, `abcdesmc!` is loosely based on 
