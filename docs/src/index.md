@@ -19,6 +19,13 @@ CurrentModule = ABCdeZ
 
 ## Minimal example
 
+
+```@raw html
+<img src="https://github.com/mauricelanghinrichs/ABCdeZ.jl/blob/main/docs/src/assets/abcdez_min_ex_model_sel.png
+" width="539">
+```
+
+
 test test 
 
 ```@raw html
