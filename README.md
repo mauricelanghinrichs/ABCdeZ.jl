@@ -6,10 +6,10 @@
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/dev/)
 <!--- ACTIVATE THIS ONCE READY: [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/stable/) --->
 
-parameter estimation
+parameter estimation height="191" 
 
-<img src="images/abcdez_min_ex_post.png" height="191">
+<img src="images/abcdez_min_ex_post.png" width="586">
 
-model selection
+model selection height="220" 
 
-<img src="images/abcdez_min_ex_model_sel.png" height="220">
+<img src="images/abcdez_min_ex_model_sel.png" width="332">
