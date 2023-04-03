@@ -5,3 +5,11 @@
 [![Documentation](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/Documentation.yml/badge.svg?branch=main)](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/Documentation.yml)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/dev/)
 <!--- ACTIVATE THIS ONCE READY: [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/stable/) --->
+
+parameter estimation
+
+<img src="images/abcdez_min_ex_post.png" height="200">
+
+model selection
+
+<img src="images/abcdez_min_ex_model_sel.png" height="200">
