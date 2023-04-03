@@ -16,4 +16,4 @@ The documentation will go through a minimal example (code also found in `example
 
 <img src="images/abcdez_min_ex_model_sel.png" width="305">
 
-ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl); please visit the documentation for a complete list of references.
+ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl); please visit the documentation for a complete list of references.
