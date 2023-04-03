@@ -8,8 +8,8 @@
 
 parameter estimation height="191"  width="586"
 
-<img src="images/abcdez_min_ex_post.png" width="557">
+<img src="images/abcdez_min_ex_post.png" width="539">
 
 model selection height="220"  width="332"
 
-<img src="images/abcdez_min_ex_model_sel.png" width="315">
+<img src="images/abcdez_min_ex_model_sel.png" width="305">
