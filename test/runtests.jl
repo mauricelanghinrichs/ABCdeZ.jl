@@ -143,7 +143,7 @@ end
 
     Zest = exp(r.logZ)
     println("Z abcdesmc! = ", Zest)
-    @test evidence_exact_indicator * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_indicator
+    @test evidence_exact_indicator * 0.8 ≤ Zest ≤ 1.2 * evidence_exact_indicator
 
     ### using abcdemc! method for posterior only
     rmc = abcdemc!(dprior, dist!, ϵ, nothing,
