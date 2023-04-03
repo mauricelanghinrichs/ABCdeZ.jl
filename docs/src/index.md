@@ -19,9 +19,11 @@ CurrentModule = ABCdeZ
 
 ## Minimal example
 
-<img src="./src/assets/abcdez_min_ex_post.png" width="539">
+```@raw html
+    <img src="./src/assets/abcdez_min_ex_post.png" width="539">
 
-<img src="./src/assets/abcdez_min_ex_model_sel.png" width="305">
+```@raw html
+    <img src="./src/assets/abcdez_min_ex_model_sel.png" width="305">
 
 this code here should match the script in examples folder on github; 
 and then maybe on github just put the png image
