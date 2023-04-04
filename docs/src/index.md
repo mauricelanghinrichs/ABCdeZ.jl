@@ -54,7 +54,7 @@ ABCdeZ.jl currently implements two main ABC methods:
 
 - [abcdesmc!](#Inference-by-abcdesmc!) (from "abc de **smc**"): A Sequential Monte Carlo algorithm. For posterior samples *and* model evidence estimates. Method of choice for multimodal or complex posterior landscapes.
 
-- [abcdemc!](#Inference-by-abcdemc!) (from "abc de **mc**"): A simpler MCMC algorithm. For posterior samples only. "Greedy" algorithm, that may be faster than ```abcdesmc!``` for some problems. May have difficulties with multimodal problems (use ```abcdesmc!``` instead).
+- [abcdemc!](#Inference-by-abcdemc!) (from "abc de **mc**"): A simpler MCMC algorithm. For posterior samples only. "Greedy" algorithm that may be faster than ```abcdesmc!``` for some problems. May have difficulties with multimodal problems (use ```abcdesmc!``` instead).
 
 Both methods make differential evolution (**de**) proposals for the MCMC (Markov chain Monte Carlo) steps of the algorithms; differential evolution provides a good scale and orientation to explore the (often) complex multi-dimensional parameter spaces effectively [^4]. For more information on both algorithms follow the respective links above.
 
@@ -62,7 +62,7 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 
 - If you want to perform parameter estimation and/or model comparison, but it is difficult to compute the likelihood for your models (time-consuming and/or analytically unknown). ABC is a likelihood-free approach, the only requirement is that you can simulate your models, given values for their parameters.
 - ABCdeZ.jl allows to compute model evidences directly and hence the results are future-proof. Model selection in ABC is often done by simulating all models of interest in the same ABC run. With ABCdeZ.jl you can run models individually, store the resulting evidence (and ``ϵ``'s) and compute evidences of any other models later, without re-computing the first. In the end, the desired set of models can be compared by transforming their evidences into posterior model probabilities or Bayes factors.
-- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]; additional it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples).
+- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]; additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples).
 
 **Why not ABC(deZ.jl)?**
 
@@ -267,34 +267,23 @@ length
 
 #### ABC - Approximations
 
-eps, summary stats
+ABC is an approximate method, with approximation errors coming from typically two sources [^2]:
 
-ABC (kernel instead of likelihood) and summary stats both introduce approximation errors, maybe read the 
-two lines in Didelot again...
+1) The kernel width ``ϵ`` (or target distance of an indicator kernel). Except for some discrete problems (where exactness may be reached with ABC and ``ϵ=0``), ``ϵ`` is chosen ``>0`` which introduces an approximation error (see [intro](#Brief-introduction)). Hence, the choice of ``ϵ`` is a trade-off between accuracy and runtime.
 
-eps trade off
+2) Summary statistics instead of the complete data. Often data and model simulations are both reduced to some summary statistics (e.g., mean values) before they are compared with a distance function. If the summary statistics are sufficient (for parameter estimation or, more stringent, model comparison), ``ϵ`` remains the only approximation. However, often the summary statistics are *not* sufficient, causing another level of inaccuracy that needs to be checked/controlled for. This is particularly important for model comparison (also see [below](#More-on-model-evidences) and [^2] [^7] [^8] and many more in the literature).
 
 #### More on model evidences
 
-when using summary stats => *sufficient* for model selection
-(link stackoverflow post and paper)
+**Effect of summary statistics on model selection:**
+Summary statistics may introduce a second source of approximation error. This needs to specifically kept in mind for model selection, as results may become entirely uninformative or wrong [^2] [^7]. Note that a summary statistic may be sufficient for parameter estimation for two models individually, but can be entirely useless for model selection between these two models [^2]. It is hence critical to chose summary statistics that are sufficient or at least near-sufficient for the task of model selection. Marin et al. (2014) [^7] provide a procedure to control for this (also more briefly described on stackexchange [^8]).
 
-summary stats need to be sufficient for model selection 
-      (it is not enough if summary stats are sufficient for 
-       each model's parameters!), link to paper and 
-       stackoverflow topic
+**Comparison of models with different final ϵ:**
+Models should be compared based on evidence values computed for the *same* final ``ϵ`` (due to kernel normalisation factor, as mentioned [here](#Inference-by-abcdesmc!) or in the [minimal example](#Minimal-example)). Still, there may be cases where this is not possible. There are two potential workarounds:
 
+1) Run the ```abcdesmc!``` method with option ```verboseout=true```. Then the inference result ```r``` will contain the complete list of (logarithmic) evidence values (```r.logZs```) for each sequential ``ϵ`` (```r.ϵs```). For models with different final ``ϵ`` (```r.ϵ```), but ``ϵ`` values in the list that are somewhat similar, one may use the smallest similar ``ϵ`` and the respective evidence values for each model to compare them.
 
-\@ref(normalisation_factor)
-off by normalisation factor (with default kernel), does not 
-matter when comparing models for the same eps; 
-what if same eps not available / impractical?
-
-same ϵ target necessary (if not possible upper bound conservative 
-      estimate may be possible, or, use ϵs and logZs lists for finding 
-      last common ϵ to compare with)
-
-explain here what to do when same eps difficult (link goes here...)
+2) For a model ``B`` that seems worse than a current best model ``A``, it may be hard to run ABC for model ``B`` targeting the same small ``ϵ_A`` of model ``A``. A conservative evidence value for model ``B`` is the evidence obtained for another higher ``ϵ_B > ϵ_A``. Using such evidences is fine, as long as model ``B`` is still defeated by model ``A`` (although artificially favoring ``B``), as one does not make misleading conclusions for the qualitative task of model selection.
 
 #### Features for the distance methods
 
