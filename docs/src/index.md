@@ -5,10 +5,20 @@ CurrentModule = ABCdeZ
 
 # ABCdeZ.jl
 
+Approximate Bayesian Computation (**ABC**) with differential evolution (**de**) moves and model evidence (**Z**) estimates.
+
+ABCdeZ.jl offers Bayesian parameter estimation and model comparison/selection for inference problems with an intractable likelihood. Models only need to be simulated (instead of calculating the likelihood). In this documentation you will find everything to get started.
+
 ```@contents
 ```
 
+ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl); please find a a complete list of references [below](#References).
+
 ## Introduction
+
+
+
+
 
 - two example files for both alg. ? or one extended minimal example (also changing
     script in examples...)
@@ -51,8 +61,8 @@ data = 3
 ϵ = 0.3
 ```
 
-Then we set up the inference of a first model. The normal prior is specified via ```Distributions``` (see "Prior" box below). Note that the model is solely specified by a 
-random simulation for a given ``θ``. The distance function here simply reports the absolute distance between the random model output and the single data point.
+Then we set up the inference of a first model. The normal prior is specified via ```Distributions``` (for more see "Prior" box below). Note that the model is solely specified by a 
+random simulation for a given ``θ``. The distance function here simply reports the absolute distance between the random model output and the single data point (see [here](#Features-for-the-distance-methods) for additional features in the distance function).
 
 ```julia
 ### model 1 inference
@@ -298,9 +308,6 @@ explain here what to do when same eps difficult (link goes here...)
     ```
 
 ## References
-
-ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by 
-[Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker.
 
 - Some part of the code was copied, adapted and/or inspired by KissABC.jl [^1]. For example, 
     the `Factored` syntax was adopted, `abcdemc!` is based on `ABCDE`, `abcdesmc!` is loosely based on 
