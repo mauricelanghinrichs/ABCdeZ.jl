@@ -12,41 +12,68 @@ ABCdeZ.jl offers Bayesian parameter estimation and model comparison/selection fo
 ```@contents
 ```
 
-ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl); please find a a complete list of references [below](#References).
+ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [^1]; please find a complete list of references [below](#References).
 
-## Introduction
+## Brief introduction
 
-
-
-
-
-- two example files for both alg. ? or one extended minimal example (also changing
-    script in examples...)
-- describe briefly: demc greedy version (biased before 
-  completion but fast), desmc (accurate, a bit slower, but also 
-  evidence estimate (up to (final) kernel norm))
-- link to all the caveats of ABC-based evidence values
-
-Here's some inline maths: ``\sqrt[n]{1 + x + x^2 + \ldots}``.
-
-To write a system of equations, use the `aligned` environment:
+Bayesian inference allows to update a parameter prior ``p(θ | M)`` in the light of new data ``D`` to obtain posterior knowledge as
 
 ```math
-\begin{aligned}
-\nabla\cdot\mathbf{E}  &= 4 \pi \rho \\
-\nabla\cdot\mathbf{B}  &= 0 \\
-\nabla\times\mathbf{E} &= - \frac{1}{c} \frac{\partial\mathbf{B}}{\partial t} \\
-\nabla\times\mathbf{B} &= - \frac{1}{c} \left(4 \pi \mathbf{J} + \frac{\partial\mathbf{E}}{\partial t} \right)
-\end{aligned}
+p(θ | D, M) = \frac{p(D| θ, M) \, p(θ | M)}{Z}
 ```
 
-These are Maxwell's equations.
+where ``θ`` are the parameters of model ``M``, ``p(D| θ, M)`` the likelihood and ``Z = p(D | M)`` is the model evidence (also known as marginal likelihood). The model evidence is the normalising integral 
+
+```math
+Z \equiv p(D | M) = \int \, p(D| θ, M) \, p(θ | M) \, \mathrm{d}θ.
+```
+
+Next to parameter estimation, Bayes' theorem also applies to the outer layer for model selection/comparison, updating (by the same data) model prior probabilities ``p(M)`` to posterior probabilities as 
+
+```math
+p(M | D) = \frac{p(D | M) \, p(M)}{p(D)}
+```
+
+where the model evidences reappear as the essential factors, and ``p(D) = \sum_i p(D | M_i) \, p(M_i)`` is a normalisation factor over all models ``M_i`` (``i = 1,...,n``).
+
+**ABC** (Approximate Bayesian Computation) approximates the likelihood through model simulations [^2], yielding simulated data ``D'`` that are evaluated with a kernel ``π_ϵ(D' | D)``,
+
+```math
+\hat{p}(D| θ, M) = \int \, p(D' | θ, M) \, π_ϵ(D' | D) \, \mathrm{d}D',
+```
+
+where ``ϵ ≥ 0`` specifies the width of the kernel. Under certain conditions, it can be shown that this approximation converges for ``ϵ \rightarrow 0`` [^2], keeping only model simulations ``D'`` that are "very close" to the original data ``D``.
+
+These equations show in brief, that posterior parameter and posterior model probabilities can be obtained by updating (model and parameter) priors through some data ``D``, only requiring model simulations and a sufficiently small target ``ϵ\approx 0``. 
+
+ABCdeZ.jl will provide parameter samples approximating the posterior ``p(θ | D, M)`` and estimations of (logarithmic) model evidences ``\mathrm{log}Z``.
+
+## ABCdeZ.jl
+
+ABCdeZ.jl currently implements two main ABC methods:
+
+- [abcdesmc!](#Inference-by-abcdesmc!) (from "abc de **smc**"): A Sequential Monte Carlo algorithm. For posterior samples *and* model evidence estimates. Method of choice for multimodal or complex posterior landscapes.
+
+- [abcdemc!](#Inference-by-abcdemc!) (from "abc de **mc**"): A simpler MCMC algorithm. For posterior samples only. "Greedy" algorithm, that may be faster than ```abcdesmc!``` for some problems. May have difficulties with multimodal problems (use ```abcdesmc!``` instead).
+
+Both methods make differential evolution (**de**) proposals for the MCMC (Markov chain Monte Carlo) steps of the algorithms; differential evolution provides a good scale and orientation to explore the (often) complex multi-dimensional parameter spaces effectively [^4]. For more information on both algorithms follow the respective links above.
+
+**Why ABCdeZ.jl?**
+
+- If you want to perform parameter estimation and/or model comparison, but it is difficult to compute the likelihood for your models (time-consuming and/or analytically unknown). ABC is a likelihood-free approach, the only requirement is that you can simulate your models, given values for their parameters.
+- ABCdeZ.jl allows to compute model evidences directly and hence the results are future-proof. Model selection in ABC is often done by simulating all models of interest in the same ABC run. With ABCdeZ.jl you can run models individually, store the resulting evidence (and ``ϵ``'s) and compute evidences of any other models later, without re-computing the first. In the end, the desired set of models can be compared by transforming their evidences into posterior model probabilities or Bayes factors.
+- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]; additional it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples).
+
+**Why not ABC(deZ.jl)?**
+
+- If you *can* calculate the likelihood function for your models, make use of it. Instead of ABC, consider likelihood-based inference methods.
+- Please be aware of the **caveats of ABC**, particular for model comparison/selection. ABC is approximative and may lead to wrong/misleading results if not applied carefully (see [here](#ABC-Approximations) for more).
 
 ## Minimal example
 
-Here we will use ABCdeZ.jl to infer the model evidences and posterior distributions within a simple toy example. The models have a single parameter ``θ`` that is, *a priori*, normally distributed (prior). After seeing one single data point, we obtain an updated posterior knowledge. To obtain model evidences, next to the posterior samples, we will use the [```abcdesmc!```](#Inference-by-abcdesmc!) method; for posterior samples only one may also use ```abcdemc!``` with a very similar syntax as seen in an [code example](#Inference-by-abcdemc!).
+Here we will use ABCdeZ.jl to infer the model evidences and posterior distributions within a simple toy example. The models have a single parameter ``θ`` that is, *a priori*, normally distributed (prior). After seeing one single data point, we obtain an updated posterior knowledge. To obtain model evidences, next to the posterior samples, we will use the [```abcdesmc!```](#Inference-by-abcdesmc!) method; for posterior samples only one may also use ```abcdemc!``` with a very similar syntax (as seen [here](#Inference-by-abcdemc!)).
 
-ABCdeZ.jl (as ABC in general) requires model simulations (for samples of ``θ``) only, and not the likelihood values (at these ``θ``). However, in this simple example the likelihood is available and chosen in a way (also Normal) that the prior is conjugate, and the exact posterior distributions and evidences are known analytically. We will compare the inferences made by ABCdeZ.jl with the analytical counterparts.
+ABCdeZ.jl (as ABC in general) requires model simulations (for samples of ``θ``) only, and not the likelihood values (at these ``θ``). However, in this simple example the likelihood is available and chosen in a way (also ```Normal```) that the prior is conjugate, and the exact posterior distributions and evidences are known analytically. We will compare the inferences made by ABCdeZ.jl with the analytical counterparts.
 
 We load the required packages, set the single data point and the target ``ϵ`` for the ABC runs.
 
@@ -322,6 +349,7 @@ explain here what to do when same eps difficult (link goes here...)
 - Closer read on sufficient summary statistics for model comparison in ABC is found in Marin et al. (2014) [^7] and condensed in this 
     stackexchange post [^8].
 - Stratified resampling (for `abcdesmc!`) is inspired by Douc et al. (2005) [^9].
+- For fast thread-based parallelism we make use of FLoops.jl [^10].
 
 [^1]: 
     
@@ -358,6 +386,10 @@ explain here what to do when same eps difficult (link goes here...)
 [^9]:
     
     [Douc et al. "Comparison of Resampling Schemes for Particle Filtering" arXiv:cs/0507025 [cs.CE], 2005.](https://arxiv.org/abs/cs/0507025)
+
+[^10]:
+
+    [FLoops (https://github.com/JuliaFolds/FLoops.jl)](https://github.com/JuliaFolds/FLoops.jl)
 
 ## Index
 
