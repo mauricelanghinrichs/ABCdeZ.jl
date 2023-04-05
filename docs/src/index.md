@@ -62,7 +62,7 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 
 - If you want to perform parameter estimation and/or model comparison, but it is difficult to compute the likelihood for your models (time-consuming and/or analytically unknown). ABC is a likelihood-free approach, the only requirement is that you can simulate your models, given values for their parameters.
 - ABCdeZ.jl allows to compute model evidences directly and hence the results are future-proof. Model selection in ABC is often done by simulating all models of interest in the same ABC run. With ABCdeZ.jl you can run models individually, store the resulting evidence (and ``ϵ``'s) and compute evidences of any other models later, without re-computing the first. In the end, the desired set of models can be compared by transforming their evidences into posterior model probabilities or Bayes factors.
-- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]; additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples).
+- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]. Additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples). For more information see [here](#Features-for-the-distance-methods).
 
 **Why not ABC(deZ.jl)?**
 
@@ -157,7 +157,7 @@ evidence2 = exp(r2.logZ)
 
 The posterior inference of model 2 is visually very similar to model 1, except the difference in the prior (Figure above, right panel).
 
-Finally, the estimated evidences can be used to compute posterior model probabilities. The model prior is uniform between the two models here.
+Finally, the estimated evidences can be used to compute posterior model probabilities (based on equations [here](#Brief-introduction)). The model prior is uniform between the two models here.
 
 ```julia
 ### model probabilities
@@ -203,7 +203,7 @@ abcdesmc!
 
     The model evidence estimates from the `abcdesmc!` method obtained by the default ABC 
     indicator kernel are off by a normalisation factor coming from an unnormalised 
-    kernel (the one used in the final iteration). To do model selection / comparison 
+    kernel (the one used in the final iteration). To do model selection/comparison 
     this means that evidence estimates for the set of models have to be done for the same 
     data (or summary statistics), distance function, ABC kernel *and* the same target 
     ϵ (which is `ϵ_target` if run not stopped by `nsims_max`). Then the (unknown) 
@@ -283,13 +283,13 @@ Models should be compared based on evidence values computed for the *same* final
 
 1) Run the ```abcdesmc!``` method with option ```verboseout=true```. Then the inference result ```r``` will contain the complete list of (logarithmic) evidence values (```r.logZs```) for each sequential ``ϵ`` (```r.ϵs```). For models with different final ``ϵ`` (```r.ϵ```), but ``ϵ`` values in the list that are somewhat similar, one may use the smallest similar ``ϵ`` and the respective evidence values for each model to compare them.
 
-2) For a model ``B`` that seems worse than a current best model ``A``, it may be hard to run ABC for model ``B`` targeting the same small ``ϵ_A`` of model ``A``. A conservative evidence value for model ``B`` is the evidence obtained for another higher ``ϵ_B > ϵ_A``. Using such evidences is fine, as long as model ``B`` is still defeated by model ``A`` (although artificially favoring ``B``), as one does not make misleading conclusions for the qualitative task of model selection.
+2) For a model ``B`` that seems worse than a current best model ``A``, it may be hard to run ABC for model ``B`` targeting the same small ``ϵ_A`` of model ``A``. A conservative evidence value for model ``B`` is the evidence obtained for another higher ``ϵ_B > ϵ_A`` (artificially favoring ``B`` compared to ``A`` at ``ϵ_A``). Using such evidences for the (qualitative) task of model selection is fine, as long as model ``B`` is still defeated by model ``A``, as one does not make misleading conclusions.
 
 #### Features for the distance methods
 
   - In the distance function in the [minimal example](#Minimal-example)
     (`dist!(θ, ve) = abs(model(θ)-data), nothing`) 
-    `ve` are "external variables" (`varexternal` in `abcdesmc!`) that can 
+    `ve` are "external variables" (`varexternal` in `abcdemc!` and `abcdesmc!`) that can 
     be used in the distance computation and mutated in-place, even in the parallel mode 
     (each thread will obtain its own copy for thread-safe parallel ABC runs).
     `ve` is passed as 4th positional argument to `abcdesmc!` (`nothing` in the 

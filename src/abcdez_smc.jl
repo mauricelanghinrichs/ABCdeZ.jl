@@ -161,7 +161,7 @@ end
 """
     abcdesmc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>)
 
-Run ABC with diffential evolution (de) moves in a sequential Monte Carlo setup (smc) 
+Run ABC with diffential evolution (de) moves in a Sequential Monte Carlo setup (smc) 
 providing posterior samples and a model evidence estimate.
 
 The particles have to be weighted (via `r.Wns`) for valid posterior samples.
