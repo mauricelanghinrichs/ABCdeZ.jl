@@ -4,11 +4,11 @@
 [![codecov](https://codecov.io/gh/mauricelanghinrichs/ABCdeZ.jl/branch/main/graph/badge.svg?token=BZ86DWE65S)](https://codecov.io/gh/mauricelanghinrichs/ABCdeZ.jl)
 [![Documentation](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/Documentation.yml/badge.svg?branch=main)](https://github.com/mauricelanghinrichs/ABCdeZ.jl/actions/workflows/Documentation.yml)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/dev/)
-<!--- ACTIVATE THIS ONCE READY: [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/stable/) --->
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://mauricelanghinrichs.github.io/ABCdeZ.jl/stable/)
 
 Approximate Bayesian Computation (**ABC**) with differential evolution (**de**) moves and model evidence (**Z**) estimates.
 
-ABCdeZ.jl offers Bayesian parameter estimation and model comparison/selection for inference problems with an intractable likelihood. Models only need to be simulated (instead of calculating the likelihood). Please visit the documentation ([dev](https://mauricelanghinrichs.github.io/ABCdeZ.jl/dev/)/stable) to get started.
+ABCdeZ.jl offers Bayesian parameter estimation and model comparison/selection for inference problems with an intractable likelihood. Models only need to be simulated (instead of calculating the likelihood). Please visit the documentation ([dev](https://mauricelanghinrichs.github.io/ABCdeZ.jl/dev/)/[stable](https://mauricelanghinrichs.github.io/ABCdeZ.jl/stable/)) to get started.
 
 <img src="docs/src/assets/abcdez_min_ex_post.png" width="539">
 
