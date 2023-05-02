@@ -1,7 +1,7 @@
 name = "ABCdeZ"
 uuid = "208e7efd-7036-4c82-8b73-3e7ae71c2350"
 authors = ["mauricelanghinrichs <m.langhinrichs@icloud.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
