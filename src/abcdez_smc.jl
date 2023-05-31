@@ -297,7 +297,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         # set a new ϵ target, including ABC kernel
         # NOTE: maybe also add option to force ϵ down by at least x%? 
         # may cause too low or only-zero weights however...
-        ϵ = max(quantile(Δs[alive], α), ϵ_target)
+        ϵ = max(min(quantile(Δs[alive], α), ϵ), ϵ_target)
         ϵ_k_new = ABCk(ϵ)
 
         # update target weights ws
