@@ -34,3 +34,40 @@ end
 Distributions.insupport(d::Indicator0toϵ, x::Real) = 0.0 ≤ x ≤ d.ϵ ? true : false
 Distributions.pdf(d::Indicator0toϵ, x::Real) = insupport(d, x) ? 1.0 : 0.0
 Distributions.logpdf(d::Indicator0toϵ, x::Real) = insupport(d, x) ? 0.0 : -Inf
+
+struct IndicatorStrict0toϵ <: ContinuousUnivariateDistribution
+    ϵ::Float64
+
+    function IndicatorStrict0toϵ(ϵ)
+        ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+        new(ϵ)
+    end
+end
+Distributions.insupport(d::IndicatorStrict0toϵ, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
+Distributions.pdf(d::IndicatorStrict0toϵ, x::Real) = insupport(d, x) ? 1.0 : 0.0
+Distributions.logpdf(d::IndicatorStrict0toϵ, x::Real) = insupport(d, x) ? 0.0 : -Inf
+
+### unnormalised Epanechnikov-type kernel
+struct Epa0toϵ <: ContinuousUnivariateDistribution
+    ϵ::Float64
+
+    function Epa0toϵ(ϵ)
+        ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+        new(ϵ)
+    end
+end
+Distributions.insupport(d::Epa0toϵ, x::Real) = 0.0 ≤ x ≤ d.ϵ ? true : false
+Distributions.pdf(d::Epa0toϵ, x::Real) = insupport(d, x) ? 1.0-(x/d.ϵ)^2 : 0.0
+Distributions.logpdf(d::Epa0toϵ, x::Real) = insupport(d, x) ? log(1.0-(x/d.ϵ)^2) : -Inf
+
+struct EpaStrict0toϵ <: ContinuousUnivariateDistribution
+    ϵ::Float64
+
+    function EpaStrict0toϵ(ϵ)
+        ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
+        new(ϵ)
+    end
+end
+Distributions.insupport(d::EpaStrict0toϵ, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
+Distributions.pdf(d::EpaStrict0toϵ, x::Real) = insupport(d, x) ? 1.0-(x/d.ϵ)^2 : 0.0
+Distributions.logpdf(d::EpaStrict0toϵ, x::Real) = insupport(d, x) ? log(1.0-(x/d.ϵ)^2) : -Inf
