@@ -62,7 +62,7 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 
 - If you want to perform parameter estimation and/or model comparison, but it is difficult to compute the likelihood for your models (time-consuming and/or analytically unknown). ABC is a likelihood-free approach, the only requirement is that you can simulate your models, given values for their parameters.
 - ABCdeZ.jl allows to compute model evidences directly and hence the results are future-proof. Model selection in ABC is often done by simulating all models of interest in the same ABC run. With ABCdeZ.jl you can run models individually, store the resulting evidence (and ``ϵ``'s) and compute evidences of any other models later, without re-computing the first. In the end, the desired set of models can be compared by transforming their evidences into posterior model probabilities or Bayes factors.
-- ABCdeZ.jl offers fast thread-based parallelism by enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]. Additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples). For more information see [here](#Features-for-the-distance-methods).
+- ABCdeZ.jl offers fast thread-based parallelism enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]. Additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples). For more information see [here](#Features-for-the-distance-methods).
 
 **Why not ABC(deZ.jl)?**
 
