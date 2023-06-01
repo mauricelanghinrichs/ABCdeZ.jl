@@ -10,6 +10,14 @@ isaround(θ, val; f=1.0) = (mean(θ) - f*std(θ) ≤ val ≤ mean(θ)+ f*std(θ)
 
 print("Available threads (for tests in parallel mode) = $(Threads.nthreads()) \n")
 
+function weightinds(weights)
+    sum(weights)≈1.0 || error("Sum of weights expected to be 1.0 (approximately)")
+    rng = Random.GLOBAL_RNG
+    inds = collect(eachindex(weights))
+    ABCdeZ.wsample_stratified!(rng, weights, inds)
+    inds
+end
+
 @testset "Factored" begin
     # tests copied and/or adapted from KissABC.jl
     d = Factored(Uniform(0, 1), Uniform(100, 101))
@@ -47,6 +55,54 @@ end
     d = ABCdeZ.Indicator0toϵ(Inf)
     @test d.ϵ == Inf
     @test (pdf(d, 0.1), logpdf(d, 0.1)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (1.0, 0.0)
+end
+
+@testset "Indicator kernel (strict)" begin
+    d = ABCdeZ.IndicatorStrict0toϵ(0.1)
+    @test d.ϵ == 0.1
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.01), logpdf(d, 0.01)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (0.0, -Inf)
+
+    d = ABCdeZ.IndicatorStrict0toϵ(Inf)
+    @test d.ϵ == Inf
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (1.0, 0.0)
+    @test (pdf(d, 0.01), logpdf(d, 0.01)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (1.0, 0.0)
+end
+
+@testset "Epanechnikov kernel" begin
+    d = ABCdeZ.Epa0toϵ(0.1)
+    @test d.ϵ == 0.1
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.0), logpdf(d, 0.0)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (0.0, -Inf)
+
+    d = ABCdeZ.Epa0toϵ(Inf)
+    @test d.ϵ == Inf
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (1.0, 0.0)
+    @test (pdf(d, 0.0), logpdf(d, 0.0)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (1.0, 0.0)
+end
+
+@testset "Epanechnikov kernel (strict)" begin
+    d = ABCdeZ.EpaStrict0toϵ(0.1)
+    @test d.ϵ == 0.1
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.0), logpdf(d, 0.0)) == (1.0, 0.0)
+    @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
+    @test (pdf(d, 0.2), logpdf(d, 0.2)) == (0.0, -Inf)
+
+    d = ABCdeZ.EpaStrict0toϵ(Inf)
+    @test d.ϵ == Inf
+    @test (pdf(d, 0.1), logpdf(d, 0.1)) == (1.0, 0.0)
+    @test (pdf(d, 0.0), logpdf(d, 0.0)) == (1.0, 0.0)
     @test (pdf(d, -0.1), logpdf(d, -0.1)) == (0.0, -Inf)
     @test (pdf(d, 0.2), logpdf(d, 0.2)) == (1.0, 0.0)
 end
@@ -209,20 +265,10 @@ end
     @test isaround([t[1] for t in r2.P[r2.Wns .> 0.0]], xdata)
 end
 
-@testset "1d Normal with Evidence / Kernel 2" begin
-    # here we define a new ABC kernel that changes the default kernel support
-    # from 0.0 ≤ x ≤ d.ϵ to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
-    struct Indicator0toϵ2 <: ContinuousUnivariateDistribution
-        ϵ::Float64
-
-        function Indicator0toϵ2(ϵ)
-            ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
-            new(ϵ)
-        end
-    end
-    Distributions.insupport(d::Indicator0toϵ2, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
-    Distributions.pdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 1.0 : 0.0
-    Distributions.logpdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 0.0 : -Inf
+@testset "1d Normal with Evidence / strict indicator kernel" begin
+    # here we use the strict indicator kernel that changed support from 0.0 ≤ x ≤ d.ϵ 
+    # to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
+    ABCk = ABCdeZ.IndicatorStrict0toϵ
 
     ###
     xdata = 3 # 3, 5, 7
@@ -255,7 +301,7 @@ end
     ### using abcdesmc! method for evidence and posterior
     dist!(θ, ve) = abs(rand(dmodel(θ)) - xdata), nothing
 
-    r = abcdesmc!(dprior, dist!, ϵ, nothing, ABCk=Indicator0toϵ2,
+    r = abcdesmc!(dprior, dist!, ϵ, nothing, ABCk=ABCk,
                         nparticles=5000, verbose=false, 
                         verboseout=true, parallel=true)
 
@@ -270,6 +316,110 @@ end
     @test isapprox(2.727272727272727, mean(dposterior))
     @test isaround(sposterior, mean(dposterior))
     @test isaround([t[1] for t in r.P[r.Wns .> 0.0]], mean(dposterior))
+end
+
+@testset "1d Normal with Evidence / Epanechnikov kernel" begin
+    # here we use a smoother Epanechnikov kernel
+    ABCk = ABCdeZ.Epa0toϵ
+
+    ###
+    xdata = 3 # 3, 5, 7
+    dprior = Normal(0, sqrt(10))
+    dposterior = Normal(10/11*xdata, sqrt(10/11))
+    dmodel(μ) = Normal(μ, 1) # for likelihood
+    evidence_exact = pdf(Normal(0, sqrt(11)), xdata)
+
+    ϵ = 0.3
+    # exact "unnormalised" evidence
+    evidence_exact_epa = evidence_exact * (4/3)ϵ
+    println("Z exact = ", evidence_exact_epa)
+    @test isapprox(0.03196007502667197, evidence_exact_epa)
+
+    ### ABC rejection and model evidence with unnormalised Epa kernel
+    nsamples = Int(1e6)
+    sprior = rand(dprior, nsamples)
+    smodel = rand.(dmodel.(sprior))
+
+    k_epa = (1.0 .- ((smodel .- xdata) ./ ϵ).^2 )
+    k_epa[k_epa .< 0.0] .= 0.0
+
+    sposterior = sprior[weightinds(k_epa./sum(k_epa))]
+
+    # direct Monte Carlo evidence estimation (from prior samples)
+    Zest = mean(k_epa)
+    println("Z rejection = ", Zest)
+    @test evidence_exact_epa * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_epa
+
+    ### using abcdesmc! method for evidence and posterior
+    dist!(θ, ve) = abs(rand(dmodel(θ)) - xdata), nothing
+
+    r = abcdesmc!(dprior, dist!, ϵ, nothing, ABCk=ABCk,
+                        nparticles=5000, verbose=false, 
+                        verboseout=true, parallel=true)
+
+    Zest = exp(r.logZ)
+    println("Z abcdesmc! = ", Zest)
+    @test evidence_exact_epa * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_epa
+
+    println("Posterior mean exact = ", mean(dposterior))
+    println("Posterior mean rejection = ", mean(sposterior))
+    println("Posterior mean abcdesmc! = ", mean([t[1] for t in r.P[weightinds(r.Wns)]]))
+
+    @test isapprox(2.727272727272727, mean(dposterior))
+    @test isaround(sposterior, mean(dposterior))
+    @test isaround([t[1] for t in r.P[weightinds(r.Wns)]], mean(dposterior))
+end
+
+@testset "1d Normal with Evidence / strict Epanechnikov kernel" begin
+    # here we use a smoother Epanechnikov kernel (strict version)
+    ABCk = ABCdeZ.EpaStrict0toϵ
+
+    ###
+    xdata = 3 # 3, 5, 7
+    dprior = Normal(0, sqrt(10))
+    dposterior = Normal(10/11*xdata, sqrt(10/11))
+    dmodel(μ) = Normal(μ, 1) # for likelihood
+    evidence_exact = pdf(Normal(0, sqrt(11)), xdata)
+
+    ϵ = 0.3
+    # exact "unnormalised" evidence
+    evidence_exact_epa = evidence_exact * (4/3)ϵ
+    println("Z exact = ", evidence_exact_epa)
+    @test isapprox(0.03196007502667197, evidence_exact_epa)
+
+    ### ABC rejection and model evidence with unnormalised Epa kernel
+    nsamples = Int(1e6)
+    sprior = rand(dprior, nsamples)
+    smodel = rand.(dmodel.(sprior))
+
+    k_epa = (1.0 .- ((smodel .- xdata) ./ ϵ).^2 )
+    k_epa[k_epa .< 0.0] .= 0.0
+
+    sposterior = sprior[weightinds(k_epa./sum(k_epa))]
+
+    # direct Monte Carlo evidence estimation (from prior samples)
+    Zest = mean(k_epa)
+    println("Z rejection = ", Zest)
+    @test evidence_exact_epa * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_epa
+
+    ### using abcdesmc! method for evidence and posterior
+    dist!(θ, ve) = abs(rand(dmodel(θ)) - xdata), nothing
+
+    r = abcdesmc!(dprior, dist!, ϵ, nothing, ABCk=ABCk,
+                        nparticles=5000, verbose=false, 
+                        verboseout=true, parallel=true)
+
+    Zest = exp(r.logZ)
+    println("Z abcdesmc! = ", Zest)
+    @test evidence_exact_epa * 0.9 ≤ Zest ≤ 1.1 * evidence_exact_epa
+
+    println("Posterior mean exact = ", mean(dposterior))
+    println("Posterior mean rejection = ", mean(sposterior))
+    println("Posterior mean abcdesmc! = ", mean([t[1] for t in r.P[weightinds(r.Wns)]]))
+
+    @test isapprox(2.727272727272727, mean(dposterior))
+    @test isaround(sposterior, mean(dposterior))
+    @test isaround([t[1] for t in r.P[weightinds(r.Wns)]], mean(dposterior))
 end
 
 @testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdemc!)" begin
@@ -304,19 +454,9 @@ end
 end
 
 @testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdesmc!)" begin
-    # here we define a new ABC kernel that changes the default kernel support
-    # from 0.0 ≤ x ≤ d.ϵ to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
-    struct Indicator0toϵ2 <: ContinuousUnivariateDistribution
-        ϵ::Float64
-
-        function Indicator0toϵ2(ϵ)
-            ϵ ≥ 0.0 || error("Expected ϵ ≥ 0.0")
-            new(ϵ)
-        end
-    end
-    Distributions.insupport(d::Indicator0toϵ2, x::Real) = 0.0 ≤ x < d.ϵ ? true : false
-    Distributions.pdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 1.0 : 0.0
-    Distributions.logpdf(d::Indicator0toϵ2, x::Real) = insupport(d, x) ? 0.0 : -Inf
+    # here we use the strict indicator kernel that changed support from 0.0 ≤ x ≤ d.ϵ 
+    # to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
+    ABCk = ABCdeZ.IndicatorStrict0toϵ
 
     # tests copied and/or adapted from KissABC.jl
     function model((n_socks, prop_pairs), consts)
@@ -343,7 +483,6 @@ end
 
     dist!(θ, ve) = sum(abs, model(θ, 0) .- tinydata), nothing
 
-    ABCk = Indicator0toϵ2
     rsmc = abcdesmc!(prior, dist!, 0.01, nothing, nparticles=5000, ABCk=ABCk, verbose=false)
 
     @test isaround([t[1] for t in rsmc.P[rsmc.Wns .> 0.0]], 46.2)
