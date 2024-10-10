@@ -246,7 +246,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     Δs = fill(d1, nparticles)
     blobs = fill(blob1, nparticles)
 
-    # this initialse a first round of particles from prior
+    # this initialises a first round of particles from prior
     # with finite logprior and dist values; updates θs, logπ, Δs, blobs
     abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
 
