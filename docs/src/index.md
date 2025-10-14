@@ -206,7 +206,7 @@ abcdesmc!
     kernel (the one used in the final iteration). To do model selection/comparison 
     this means that evidence estimates for the set of models have to be done for the same 
     data (or summary statistics), distance function, ABC kernel *and* the same target 
-    ϵ (which is `ϵ_target` if run not stopped by `nsims_max`). Then the (unknown) 
+    ϵ (which is `ϵ_target` if run not stopped by `nsims_max` or `facc_stop`). Then the (unknown) 
     normalisation factor is the same for all models and does not matter (cancels) for 
     Bayes factors or posterior model probabilities. See [here](#More-on-model-evidences)
     for workarounds if ϵ is not the same.

@@ -171,7 +171,7 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
 - `dist!`: distance function computing the distance (`≥ 0.0`) between model and data, 
     for given `(θ, ve)` input (`θ` parameters, `ve` external variables, see `varexternal`).
 - `ϵ_target`: final target distance (or more general, target width of the ABC kernel); algorithm 
-    stops if `ϵ_target` or `nsims_max` is reached.
+    stops if `ϵ_target` (or `nsims_max` or `facc_stop`) is reached.
 - `varexternal`: external variables that are passed as second positional argument to `dist!` 
     and can be used to support the distance computation with fast in-place operations in 
     a thread-safe manner; objects in `varexternal` can be in-place mutated, even in `parallel` mode, 
@@ -181,7 +181,7 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
     ϵ will be the `α`-quantile of current particle distances.
 - `δess=0.5`: if the fractional effective sample size drops below `δess`, a stratified resampling step is performed.
 - `nsims_max::Int=10^7`: maximal number of `dist!` evaluations (not counting initial samples from prior); 
-    algorithm stops if `ϵ_target` or `nsims_max` is reached.
+    algorithm stops if `ϵ_target` or `nsims_max` or `facc_stop` is reached.
 - `Kmcmc::Int=3`: number of MCMC (Markov chain Monte Carlo) steps at each sequential 
     target distribution specified by current ϵ and ABC kernel type; actual number can be 
     lower due to early exits as specified by `Kmcmc_min`.
@@ -189,6 +189,8 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
     is reached earlier (before completing the total `Kmcmc` MCMC steps) the loop is early-exited; 
     set `Kmcmc_min=Inf` to compute exactly `Kmcmc` MCMC steps at each ϵ target.
 - `ABCk=ABCdeZ.Indicator0toϵ`: ABC kernel to be specified by ϵ widths that receives distance values.
+- `facc_stop=0.0`: the algorithm stops if the fraction of accepted MCMC proposals (`facc`) 
+    in an iteration drops below `facc_stop` (or `ϵ_target` or `nsims_max` is reached).
 - `facc_min=0.15`: if the fraction of accepted MCMC proposals drops below `facc_min`, diffential evolution 
     proposals are reduced by a factor of `facc_tune`.
 - `facc_tune=0.975`: factor to reduce the jump distance of the diffential evolution 
@@ -215,13 +217,14 @@ julia> evidence = exp(r.logZ);
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, δess=0.5, 
                 nsims_max::Int=10^7, Kmcmc::Int=3, Kmcmc_min=1.0,
-                ABCk=Indicator0toϵ, facc_min=0.15, facc_tune=0.975,
+                ABCk=Indicator0toϵ, facc_stop=0.0, facc_min=0.15, facc_tune=0.975,
                 verbose::Bool=true, verboseout::Bool=true, 
                 rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
     ### initialisation
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
     0.0 ≤ δess ≤ 1.0 || error("δess must be in 0 <= δess <= 1")
+    0.0 ≤ facc_stop ≤ 1.0 || error("facc_stop must be in 0 <= facc_stop <= 1")
     0.0 ≤ facc_min ≤ 1.0 || error("facc_min must be in 0 <= facc_min <= 1")
     0.0 ≤ facc_tune ≤ 1.0 || error("facc_tune must be in 0 <= facc_tune <= 1")
     0.0 ≤ ϵ_target || error("ϵ_target must be non-negative") # TODO/NOTE: like this or adaptive termination?
@@ -235,7 +238,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
 
     parallel ? ex=ThreadedEx() : ex=SequentialEx()
     verbose && (@info("Running abcdesmc! with executor ($(Threads.nthreads()) threads available) ", typeof(ex)))
-    verbose && (@info "Running abcdesmc! with" ϵ_target nparticles α δess nsims_max Kmcmc Kmcmc_min ABCk facc_min facc_tune rng parallel verboseout)
+    verbose && (@info "Running abcdesmc! with" ϵ_target nparticles α δess nsims_max Kmcmc Kmcmc_min ABCk facc_stop facc_min facc_tune rng parallel verboseout)
 
     # draw prior parameters for each particle, and calculate logprior values
     θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
@@ -371,7 +374,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         verbose && (@info "Finished run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
 
         # stopping criterion
-        (ϵ ≤ ϵ_target || sum(nsims) ≥ nsims_max) && break
+        (ϵ ≤ ϵ_target || sum(nsims) ≥ nsims_max || facc < facc_stop) && break
     end
 
     verbose && (@info "Final run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
