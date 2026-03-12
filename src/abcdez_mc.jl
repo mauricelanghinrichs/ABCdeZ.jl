@@ -81,8 +81,8 @@ Algorithm needs to converge for an unbiased posterior estimate.
 - `nparticles::Int=50`: number of total particles to use for inference in each generation.
 - `generations::Int=20`: number of generations (total iterations) to run the algorithm.
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
-- `rng=Random.TaskLocalRNG()`: an AbstractRNG object which is used by the inference; if `parallel=true` 
-    the `rng` must be thread-safe (as achieved by current default).
+- `rng=Random.default_rng()`: random number generator (`rng`) which is used by the inference; if `parallel=true` 
+    it must be thread-safe (as achieved by current default).
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
     thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
     thread-safe (true by default).
@@ -101,7 +101,7 @@ julia> posterior = [t[1] for t in r.P];
 """
 function abcdemc!(prior, dist!, ϵ_target, varexternal; 
                 nparticles::Int=50, generations::Int=20,
-                verbose=true, rng=Random.TaskLocalRNG(), parallel::Bool=false)
+                verbose=true, rng=Random.default_rng(), parallel::Bool=false)
     
     ### initialisation
     α = 0.0 # 0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")

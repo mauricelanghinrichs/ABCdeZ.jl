@@ -12,7 +12,7 @@ print("Available threads (for tests in parallel mode) = $(Threads.nthreads()) \n
 
 function weightinds(weights)
     sum(weights)≈1.0 || error("Sum of weights expected to be 1.0 (approximately)")
-    rng = Random.GLOBAL_RNG
+    rng = Random.default_rng()
     inds = collect(eachindex(weights))
     ABCdeZ.wsample_stratified!(rng, weights, inds)
     inds

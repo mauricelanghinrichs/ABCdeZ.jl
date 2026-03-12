@@ -193,8 +193,8 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
     proposals in the MCMC step (used if `facc_min` is reached).
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
 - `verboseout::Bool=true`: if set to `true`, algorithm returns a more detailed inference output.
-- `rng=Random.TaskLocalRNG()`: an AbstractRNG object which is used by the inference; if `parallel=true` 
-    the `rng` must be thread-safe (as achieved by current default).
+- `rng=Random.default_rng()`: random number generator (`rng`) which is used by the inference; if `parallel=true` 
+    it must be thread-safe (as achieved by current default).
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
     thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
     thread-safe (true by default).
@@ -217,7 +217,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nsims_max::Int=10^7, Kmcmc::Int=3, Kmcmc_min=1.0,
                 ABCk=IndicatorStrict0toϵ, facc_stop=0.0, facc_min=0.0, facc_tune=0.975,
                 verbose::Bool=true, verboseout::Bool=true, 
-                rng=Random.TaskLocalRNG(), parallel::Bool=false)
+                rng=Random.default_rng(), parallel::Bool=false)
     
     ### initialisation
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
