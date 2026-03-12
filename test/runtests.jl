@@ -252,7 +252,7 @@ end
                         verboseout=true, parallel=true)
 
     Zest2 = exp(r2.logZ)
-    println("Z abcdesmc! 1 = ", Zest2)
+    println("Z abcdesmc! 2 = ", Zest2)
     @test Z_rejection_2 * 0.8 ≤ Zest2 ≤ 1.2 * Z_rejection_2
 
     ### factor check (around 2)
@@ -265,10 +265,10 @@ end
     @test isaround([t[1] for t in r2.P[r2.Wns .> 0.0]], xdata)
 end
 
-@testset "1d Normal with Evidence / strict indicator kernel" begin
-    # here we use the strict indicator kernel that changed support from 0.0 ≤ x ≤ d.ϵ 
-    # to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
-    ABCk = ABCdeZ.IndicatorStrict0toϵ
+@testset "1d Normal with Evidence / non-strict indicator kernel" begin
+    # here we use the non-strict indicator kernel that has support 
+    # from 0.0 ≤ x ≤ d.ϵ instead of 0.0 ≤ x < d.ϵ
+    ABCk = ABCdeZ.Indicator0toϵ
 
     ###
     xdata = 3 # 3, 5, 7
@@ -422,7 +422,7 @@ end
     @test isaround([t[1] for t in r.P[weightinds(r.Wns)]], mean(dposterior))
 end
 
-@testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdemc!)" begin
+@testset "Tiny Data, ABC and the Socks of Karl Broman (abcdemc!)" begin
     # tests copied and/or adapted from KissABC.jl
     function model((n_socks, prop_pairs), consts)
         n_picked = 11
@@ -453,9 +453,10 @@ end
     @test isaround([t[2] for t in rmc.P], 0.866)
 end
 
-@testset "Tiny Data, Approximate Bayesian Computation and the Socks of Karl Broman (abcdesmc!)" begin
-    # here we use the strict indicator kernel that changed support from 0.0 ≤ x ≤ d.ϵ 
-    # to 0.0 ≤ x < d.ϵ, to work for these discrete ABC distances
+@testset "Tiny Data, ABC and the Socks of Karl Broman (abcdesmc!, strict kernel)" begin
+    # here we use the strict indicator kernel that has support 
+    # from 0.0 ≤ x < d.ϵ instead of 0.0 ≤ x ≤ d.ϵ, to work for these 
+    # discrete ABC distances
     ABCk = ABCdeZ.IndicatorStrict0toϵ
 
     # tests copied and/or adapted from KissABC.jl
