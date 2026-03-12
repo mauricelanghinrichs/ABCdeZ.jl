@@ -52,7 +52,7 @@ ABCdeZ.jl will provide parameter samples approximating the posterior ``p(θ | D,
 
 ABCdeZ.jl currently implements two main ABC methods:
 
-- [abcdesmc!](#Inference-by-abcdesmc!) (from "abc de **smc**"): A Sequential Monte Carlo algorithm. For posterior samples *and* model evidence estimates. Method of choice for multimodal or complex posterior landscapes.
+- [abcdesmc!](#Inference-by-abcdesmc!) (from "abc de **smc**"): A Sequential Monte Carlo algorithm. For posterior samples *and* model evidence estimates. Go-to method, and method of choice for multimodal or complex posterior landscapes.
 
 - [abcdemc!](#Inference-by-abcdemc!) (from "abc de **mc**"): A simpler MCMC algorithm. For posterior samples only. "Greedy" algorithm that may be faster than ```abcdesmc!``` for some problems. May have difficulties with multimodal problems (use ```abcdesmc!``` instead).
 
