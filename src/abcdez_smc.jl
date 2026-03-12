@@ -372,6 +372,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
         verbose && (@info "Finished run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
 
         # stopping criterion
+        any(alive) || (@warn("No alive particles"); break)
         (ϵ ≤ ϵ_target || sum(nsims) ≥ nsims_max || facc < facc_stop) && break
     end
 
@@ -392,7 +393,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     end
 end
 
-### some (outdated) NOTES:
+### some (outdated) notes
 # - nice would be to keep the DE MCMC move... seemed just 
 #   to perform good before
 # - unclear yet how then to correctly compute weights
