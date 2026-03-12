@@ -62,7 +62,7 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 
 - If you want to perform parameter estimation and/or model comparison, but it is difficult to compute the likelihood for your models (time-consuming and/or analytically unknown). ABC is a likelihood-free approach, the only requirement is that you can simulate your models, given values for their parameters.
 - ABCdeZ.jl allows to compute model evidences directly and hence the results are future-proof. Model selection in ABC is often done by simulating all models of interest in the same ABC run. With ABCdeZ.jl you can run models individually, store the resulting evidence (and ``ϵ``'s) and compute evidences of any other models later, without re-computing the first. In the end, the desired set of models can be compared by transforming their evidences into posterior model probabilities or Bayes factors.
-- ABCdeZ.jl offers fast thread-based parallelism enabled by [FLoops.jl](https://github.com/JuliaFolds/FLoops.jl) [^10]. Additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples). For more information see [here](#Features-for-the-distance-methods).
+- ABCdeZ.jl offers fast thread-based parallelism enabled by [FLoops.jl](https://github.com/JuliaFolds2/FLoops.jl) [^10]. Additionally it also allows to store arbitrary data ```blobs``` together with the sample particles (e.g., to have the simulation output alongside the final posterior samples). For more information see [here](#Features-for-the-distance-methods).
 
 **Why not ABC(deZ.jl)?**
 
@@ -281,7 +281,7 @@ Summary statistics may introduce a second source of approximation error. This ne
 **Comparison of models with different final ϵ:**
 Models should be compared based on evidence values computed for the *same* final ``ϵ`` (due to kernel normalisation factor, as mentioned [here](#Inference-by-abcdesmc!) or in the [minimal example](#Minimal-example)). Still, there may be cases where this is not possible. There are two potential workarounds:
 
-1) Run the ```abcdesmc!``` method with option ```verboseout=true```. Then the inference result ```r``` will contain the complete list of (logarithmic) evidence values (```r.logZs```) for each sequential ``ϵ`` (```r.ϵs```). For models with different final ``ϵ`` (```r.ϵ```), but ``ϵ`` values in the list that are somewhat similar, one may use the smallest similar ``ϵ`` and the respective evidence values for each model to compare them.
+1) Run the ```abcdesmc!``` method with option ```verboseout=true```. Then the inference result ```r``` will contain the complete list of (logarithmic) evidence values (```r.logZs```) for each sequential ``ϵ`` (```r.ϵs```). For models with different final ``ϵ`` (```r.ϵ```), but ``ϵ`` values in the list that are somewhat similar, one may use the smallest similar ``ϵ`` and the respective evidence values for each model to compare them. This procedure can be made systematic for the comparison of many models at once and works well in practice; a script is available on request.
 
 2) For a model ``B`` that seems worse than a current best model ``A``, it may be hard to run ABC for model ``B`` targeting the same small ``ϵ_A`` of model ``A``. A conservative evidence value for model ``B`` is the evidence obtained for another higher ``ϵ_B > ϵ_A`` (artificially favoring ``B`` compared to ``A`` at ``ϵ_A``). Using such evidences for the (qualitative) task of model selection is fine, as long as model ``B`` is still defeated by model ``A``, as one does not make misleading conclusions.
 
@@ -358,7 +358,7 @@ Models should be compared based on evidence values computed for the *same* final
 
 [^5]:
 
-    [Turner et al. "Approximate Bayesian computation with differential evolution"  Journal of Mathematical Psychology, 2012.](https://compmem.org/assets/pubs/Turner.Sederberg.2012.pdf)
+    [Turner et al. "Approximate Bayesian computation with differential evolution"  Journal of Mathematical Psychology, 2012.](https://doi.org/10.1016/j.jmp.2012.06.004)
 
 [^6]:
     
@@ -378,7 +378,7 @@ Models should be compared based on evidence values computed for the *same* final
 
 [^10]:
 
-    [FLoops (https://github.com/JuliaFolds/FLoops.jl)](https://github.com/JuliaFolds/FLoops.jl)
+    [FLoops (https://github.com/JuliaFolds2/FLoops.jl)](https://github.com/JuliaFolds2/FLoops.jl)
 
 ## Index
 
