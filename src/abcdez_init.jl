@@ -9,21 +9,12 @@
 # NOTE: θs, logπ, Δs are read out but never written to, (for this
 # nθs, nlogπ, nΔs are used), so this should be data race free
 
-# NOTE: I checked that Threads.threadid() also works in an floop
-# NOTE: seems to have something with thread-safe random numbers, see
-# https://discourse.julialang.org/t/multithreading-and-random-number-generators/49777/8
-# NOTE/TODO: maybe this can be improved performance-wise (see FLoops docs
-# on random numbers)
-
 function abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng, ex, blobs)
     # calculate cost/dist for each particle
     # (re-draw parameters if not finite)
 
     @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
-        
-        trng=rng
-        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
 
         if isfinite(logπ[i])
             d, blob = dist!(push_p(prior, θs[i].x), ve)
@@ -31,7 +22,7 @@ function abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng
             blobs[i] = blob
         end
         while (!isfinite(Δs[i])) || (!isfinite(logπ[i]))
-            θs[i] = op(float, Particle(rand(trng, prior)))
+            θs[i] = op(float, Particle(rand(rng, prior)))
             logπ[i] = logpdf(prior, push_p(prior, θs[i].x))
             d, blob = dist!(push_p(prior, θs[i].x), ve)
             Δs[i] = d

@@ -7,9 +7,6 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
     @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
 
-        trng=rng
-        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
-
         ### DE (diffential evolution) move
         # NOTE: as long as "if Δs[i] > ϵ" clause applies the proposal kernel 
         # is not symmetric as the if-clause selects a better particle to replace 
@@ -23,18 +20,18 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
         if Δs[i] > ϵ
             # NOTE: Δs .<= Δs[i] is this data race safe? note that nΔs and Δs
             # are not referenced through the identity.() broadcast
-            s=rand(trng, (1:nparticles)[Δs .<= Δs[i]])
+            s=rand(rng, (1:nparticles)[Δs .<= Δs[i]])
         end
         a = s
         while a == s
-            a = rand(trng, 1:nparticles)
+            a = rand(rng, 1:nparticles)
         end
         b = a
         while b == a || b == s
-            b = rand(trng, 1:nparticles)
+            b = rand(rng, 1:nparticles)
         end
         # θp is a new Particle with new tuple values (.x) [see comment above]
-        θp = op(+, θs[s], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(trng)*γσ) ))
+        θp = op(+, θs[s], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(rng)*γσ) ))
 
         ### MH (Metropolis–Hastings) acceptance step
         # NOTE: strictly ratios of prior, ABC kernel (likelihood if available) 
@@ -43,7 +40,7 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
         # ABC kernel can be simplified as below (out of min, into if clause) if simple indicator
         lπ = logpdf(prior, push_p(prior, θp.x))
         w_prior = lπ - logπ[i] # prior ratio (in log space)
-        log(rand(trng)) > min(0, w_prior) && continue
+        log(rand(rng)) > min(0, w_prior) && continue
         nsims[i] += 1
         dp, blob = dist!(push_p(prior, θp.x), ve)
 
@@ -84,9 +81,11 @@ Algorithm needs to converge for an unbiased posterior estimate.
 - `nparticles::Int=50`: number of total particles to use for inference in each generation.
 - `generations::Int=20`: number of generations (total iterations) to run the algorithm.
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
-- `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
+- `rng=Random.TaskLocalRNG()`: an AbstractRNG object which is used by the inference; if `parallel=true` 
+    the `rng` must be thread-safe (as achieved by current default).
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
-    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`).
+    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
+    thread-safe (true by default).
 
 # Examples
 ```julia-repl
@@ -102,7 +101,7 @@ julia> posterior = [t[1] for t in r.P];
 """
 function abcdemc!(prior, dist!, ϵ_target, varexternal; 
                 nparticles::Int=50, generations::Int=20,
-                verbose=true, rng=Random.GLOBAL_RNG, parallel::Bool=false)
+                verbose=true, rng=Random.TaskLocalRNG(), parallel::Bool=false)
     
     ### initialisation
     α = 0.0 # 0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")

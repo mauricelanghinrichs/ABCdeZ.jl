@@ -110,9 +110,6 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
     @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
 
-        trng=rng
-        ex!=SequentialEx() && (trng=Random.default_rng(Threads.threadid());)
-
         ### zero-weight particles can be neglected
         alive[i] || continue
 
@@ -121,16 +118,14 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
         # (such a proposal kernel is still symmetric)
         a = i
         while a == i
-            # a = rand(trng, 1:nparticles)
-            a = wsample(trng, 1:nparticles, alive)
+            a = wsample(rng, 1:nparticles, alive)
         end
         b = a
         while b == a || b == i
-            # b = rand(trng, 1:nparticles)
-            b = wsample(trng, 1:nparticles, alive)
+            b = wsample(rng, 1:nparticles, alive)
         end
         # θp is a new Particle with new tuple values (.x)
-        θp = op(+, θs[i], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(trng)*γσ) ))
+        θp = op(+, θs[i], op(*, op(-, θs[a], θs[b]), γ0 * (1.0 + randn(rng)*γσ) ))
         ###
 
         ### MH step acceptance step to target current ϵ
@@ -146,8 +141,8 @@ function abcdesmc_swarm!(prior, dist!, varexternal,
             + logpdf(ϵ_k_new, dp) - logpdf(ϵ_k_new, Δs[i])) # kernel ratio (in log space)
         # for indicator, logpdf(ϵ_kernel, Δs[i]) should be 0 (as we only look at alive)
 
-        # if condition here the same as "log(rand(trng)) < min(0, w)"
-        if 0.0 ≤ w || log(rand(trng)) < w
+        # if condition here the same as "log(rand(rng)) < min(0, w)"
+        if 0.0 ≤ w || log(rand(rng)) < w
             nΔs[i] = dp
             nθs[i] = θp
             nlogπ[i] = lπ
@@ -198,9 +193,11 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
     proposals in the MCMC step (used if `facc_min` is reached).
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
 - `verboseout::Bool=true`: if set to `true`, algorithm returns a more detailed inference output.
-- `rng=Random.GLOBAL_RNG`: an AbstractRNG object which is used by the inference.
+- `rng=Random.TaskLocalRNG()`: an AbstractRNG object which is used by the inference; if `parallel=true` 
+    the `rng` must be thread-safe (as achieved by current default).
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
-    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`).
+    thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
+    thread-safe (true by default).
 
 # Examples
 ```julia-repl
@@ -220,7 +217,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nsims_max::Int=10^7, Kmcmc::Int=3, Kmcmc_min=1.0,
                 ABCk=Indicator0toϵ, facc_stop=0.0, facc_min=0.0, facc_tune=0.975,
                 verbose::Bool=true, verboseout::Bool=true, 
-                rng=Random.GLOBAL_RNG, parallel::Bool=false)
+                rng=Random.TaskLocalRNG(), parallel::Bool=false)
     
     ### initialisation
     0.0 ≤ α < 1.0 || error("α must be in 0 <= α < 1")
