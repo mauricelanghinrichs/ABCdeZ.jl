@@ -19,7 +19,7 @@ function abcde_init!(prior, dist!, varexternal, θs, logπ, Δs, nparticles, rng
     # calculate cost/dist for each particle
     # (re-draw parameters if not finite)
 
-    @floop ex for i = 1:nparticles
+    @floop ex for i in 1:nparticles
         @init ve = deepcopy(varexternal)
         
         trng=rng

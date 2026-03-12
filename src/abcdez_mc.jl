@@ -115,8 +115,8 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal;
     verbose && (@info "Running abcdemc! with" ϵ_target nparticles generations α rng parallel)
 
     # draw prior parameters for each particle, and calculate logprior values
-    θs = [op(float, Particle(rand(rng, prior))) for i = 1:nparticles]
-    logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i = 1:nparticles]
+    θs = [op(float, Particle(rand(rng, prior))) for __ in 1:nparticles]
+    logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i in 1:nparticles]
 
     ve = deepcopy(varexternal)
     d1, blob1 = dist!(push_p(prior, θs[1].x), ve)
@@ -164,9 +164,9 @@ function abcdemc!(prior, dist!, ϵ_target, varexternal;
     conv = maximum(Δs) <= ϵ_target
     verbose && (@info "End:" completion = complete converged = conv nsim = sum(nsims) range_ϵ = extrema(Δs))
     
-    θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
+    θs = [push_p(prior, θs[i].x) for i in 1:nparticles]
     # l = length(prior)
-    # P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
+    # P = map(x -> Particles(x), getindex.(θs, i) for i in 1:l)
     # length(P)==1 && (P=first(P))
     # (P = P, C = Δs, reached_ϵ = conv, blobs = blobs)
     (P = θs, C = Δs, reached_ϵ = conv, blobs = blobs)

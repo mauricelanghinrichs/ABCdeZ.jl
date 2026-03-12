@@ -26,7 +26,7 @@ Function to evaluate the pdf of a `Factored` distribution object.
 """
 function pdf(d::Factored{N}, x) where {N}
     s = pdf(d.p[1], x[1])
-    for i = 2:N
+    for i in 2:N
         s *= pdf(d.p[i], x[i])
     end
     s
@@ -39,7 +39,7 @@ Function to evaluate the logpdf of a `Factored` distribution object.
 """
 function logpdf(d::Factored{N}, x) where {N}
     s = logpdf(d.p[1], x[1])
-    for i = 2:N
+    for i in 2:N
         s += logpdf(d.p[i], x[i])
     end
     s

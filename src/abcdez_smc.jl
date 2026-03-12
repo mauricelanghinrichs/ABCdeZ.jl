@@ -241,7 +241,7 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     verbose && (@info "Running abcdesmc! with" ϵ_target nparticles α δess nsims_max Kmcmc Kmcmc_min ABCk facc_stop facc_min facc_tune rng parallel verboseout)
 
     # draw prior parameters for each particle, and calculate logprior values
-    θs = [op(float, Particle(rand(rng, prior))) for i in 1:nparticles]
+    θs = [op(float, Particle(rand(rng, prior))) for __ in 1:nparticles]
     logπ = [logpdf(prior, push_p(prior, θs[i].x)) for i in 1:nparticles]
 
     ve = deepcopy(varexternal)
@@ -380,9 +380,9 @@ function abcdesmc!(prior, dist!, ϵ_target, varexternal;
     verbose && (@info "Final run:" iteration = iters nsim = sum(nsims) ϵ = ϵ range_ϵ = extrema(Δs) ess = ess facc = facc logZ = logZ)
 
     ### report results
-    θs = [push_p(prior, θs[i].x) for i = 1:nparticles]
+    θs = [push_p(prior, θs[i].x) for i in 1:nparticles]
     # l = length(prior)
-    # P = map(x -> Particles(x), getindex.(θs, i) for i = 1:l)
+    # P = map(x -> Particles(x), getindex.(θs, i) for i in 1:l)
     # length(P)==1 && (P=first(P))
     # NOTE: previous: P = P
 
