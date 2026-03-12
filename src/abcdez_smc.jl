@@ -191,8 +191,9 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
 - `ABCk=ABCdeZ.Indicator0toϵ`: ABC kernel to be specified by ϵ widths that receives distance values.
 - `facc_stop=0.0`: the algorithm stops if the fraction of accepted MCMC proposals (`facc`) 
     in an iteration drops below `facc_stop` (or `ϵ_target` or `nsims_max` is reached).
-- `facc_min=0.15`: if the fraction of accepted MCMC proposals drops below `facc_min`, diffential evolution 
-    proposals are reduced by a factor of `facc_tune`.
+- `facc_min=0.0`: if the fraction of accepted MCMC proposals drops below `facc_min`, diffential evolution 
+    proposals are reduced by a factor of `facc_tune`; not used by default (`facc_min=0.0`), set `facc_min=0.15` 
+    (for example) to apply it.
 - `facc_tune=0.975`: factor to reduce the jump distance of the diffential evolution 
     proposals in the MCMC step (used if `facc_min` is reached).
 - `verbose::Bool=true`: if set to `true`, enables verbosity (printout to REPL).
@@ -217,7 +218,7 @@ julia> evidence = exp(r.logZ);
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, δess=0.5, 
                 nsims_max::Int=10^7, Kmcmc::Int=3, Kmcmc_min=1.0,
-                ABCk=Indicator0toϵ, facc_stop=0.0, facc_min=0.15, facc_tune=0.975,
+                ABCk=Indicator0toϵ, facc_stop=0.0, facc_min=0.0, facc_tune=0.975,
                 verbose::Bool=true, verboseout::Bool=true, 
                 rng=Random.GLOBAL_RNG, parallel::Bool=false)
     
