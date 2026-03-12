@@ -183,7 +183,7 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
 - `Kmcmc_min=1.0`: minimal value for accumulated acceptances per alive particle; if this value 
     is reached earlier (before completing the total `Kmcmc` MCMC steps) the loop is early-exited; 
     set `Kmcmc_min=Inf` to compute exactly `Kmcmc` MCMC steps at each ϵ target.
-- `ABCk=ABCdeZ.Indicator0toϵ`: ABC kernel to be specified by ϵ widths that receives distance values.
+- `ABCk=ABCdeZ.IndicatorStrict0toϵ`: ABC kernel to be specified by ϵ widths that receives distance values.
 - `facc_stop=0.0`: the algorithm stops if the fraction of accepted MCMC proposals (`facc`) 
     in an iteration drops below `facc_stop` (or `ϵ_target` or `nsims_max` is reached).
 - `facc_min=0.0`: if the fraction of accepted MCMC proposals drops below `facc_min`, diffential evolution 
@@ -215,7 +215,7 @@ julia> evidence = exp(r.logZ);
 function abcdesmc!(prior, dist!, ϵ_target, varexternal;
                 nparticles::Int=100, α=0.95, δess=0.5, 
                 nsims_max::Int=10^7, Kmcmc::Int=3, Kmcmc_min=1.0,
-                ABCk=Indicator0toϵ, facc_stop=0.0, facc_min=0.0, facc_tune=0.975,
+                ABCk=IndicatorStrict0toϵ, facc_stop=0.0, facc_min=0.0, facc_tune=0.975,
                 verbose::Bool=true, verboseout::Bool=true, 
                 rng=Random.TaskLocalRNG(), parallel::Bool=false)
     
