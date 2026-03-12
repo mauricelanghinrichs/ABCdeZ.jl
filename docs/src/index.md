@@ -12,7 +12,7 @@ ABCdeZ.jl offers Bayesian parameter estimation and model comparison/selection fo
 ```@contents
 ```
 
-ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/modellierung-biologischer-systeme/) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [^1]; please find a complete list of references [below](#References).
+ABCdeZ.jl was developed [@TSB](https://www.dkfz.de/en/theoretical-systems-biology) by [Maurice Langhinrichs](mailto:m.langhinrichs@icloud.com) and Nils Becker. This work is based on many people's previous achievements, particular some part of the code base was adapted from [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [^1]; please find a complete list of references [below](#References).
 
 ## Brief introduction
 
