@@ -105,8 +105,8 @@ Bayesian Computation written in Julia [@bezanson_julia_2017] and hosted on
 [GitHub](`https://github.com/mauricelanghinrichs/ABCdeZ.jl`). 
 It is registered in the Julia General Registry and
 installable via `] add ABCdeZ`. The package provides a user-friendly API,
-comprehensive documentation, and a full set of minimal working examples for
-rapid onboarding. For example, code generating \autoref{fig:one} is included in
+comprehensive documentation and minimal working examples for rapid onboarding. 
+For example, the code generating \autoref{fig:one} is included in
 the documentation and repository. ABCdeZ.jl uses automated continuous
 integration (CI) workflows for testing, documentation deployment, and test
 coverage reporting. The test suite (`] test ABCdeZ`) achieves 98% coverage
@@ -156,8 +156,8 @@ summary statistics and distance functions. ABCdeZ.jl therefore provides
 extensive documentation covering practical aspects of simulation-based 
 inference workflows. In addition, the package emphasizes ease of use through 
 a simple API centered around a single top-level inference function 
-(`abcdesmc!`) and minimal working examples that enable rapid 
-onboarding and reproducible workflows.
+(`abcdesmc!`) and minimal working examples enabling straightforward 
+adoption and reproducible workflows.
 
 
 # Research impact statement
