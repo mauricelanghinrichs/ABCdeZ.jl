@@ -128,7 +128,7 @@ ABCdeZ.jl implements an ABC-SMC framework in which particle weights are tracked
 [@didelot_likelihood-free_2011; @del_moral_adaptive_2012], following weight
 assignments analogous to those used in likelihood-based SMC inference (e.g.,
 @amaya_adaptive_2021). As SMC algorithms handle complex multimodal 
-parameter landscapes well [@neal_annealed_1998; @del_moral_sequential_2006], 
+parameter landscapes well [@neal_annealed_2001; @del_moral_sequential_2006], 
 high-quality posterior parameter samples are obtained alongside 
 the evidence estimation. The algorithm uses differential evolution
 [@braak_markov_2006] for parameter proposals and stratified resampling
