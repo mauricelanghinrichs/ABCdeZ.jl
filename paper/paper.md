@@ -36,7 +36,7 @@ phenomena by identifying the most plausible explanations for the observations.
 Approximate Bayesian Computation (ABC) applies this framework to cases where
 the likelihood function is unavailable, requiring only that models can be
 simulated. ABCdeZ.jl is a general-purpose, simulation-based Bayesian
-inference package for the Julia programming language, enabling parameter
+inference package for the Julia programming language, supporting parameter
 estimation and model comparison using Sequential Monte Carlo (SMC) methods. In
 particular, ABCdeZ.jl provides model evidence estimates for each considered
 model individually, enabling flexible and scalable model comparison workflows
@@ -58,7 +58,7 @@ setting, this is achieved by ranking the model evidences, also called marginal
 likelihoods, and requires efficient methods to estimate the evidence by forward
 simulation. In addition, as research progresses, models of interest may be
 added or removed, changing the set of alternative models. Here methods that
-estimates evidence separately per model are advantageous, as they avoid costly
+estimate evidence separately per model are advantageous, as they avoid costly
 recomputation over the entire model set on each change. There is currently no
 Julia package that provides efficient likelihood-free individual model evidence
 estimates.
@@ -86,7 +86,7 @@ some cases, model comparison is also implemented via rejection, Markov Chain
 Monte Carlo, or Sequential Monte Carlo (SMC) methods. In particular, approaches
 such as those implemented in ApproxBayes.jl or GpABC.jl directly estimate
 posterior model probabilities through model-swapping Monte Carlo moves,
-foregoing the estimation of individual normalized evidences. A similar
+foregoing the estimation of individual evidences. A similar
 procedure is used by [pyABC](https://github.com/ICB-DCM/pyABC)
 [@schaelte2022pyabc], a popular ABC package in the Python programming language.
 
@@ -103,7 +103,7 @@ development computationally inefficient.
 
 ABCdeZ.jl is an open-source, MIT-licensed software package for Approximate
 Bayesian Computation written in Julia [@bezanson_julia_2017] and hosted on
-[GitHub](`https://github.com/mauricelanghinrichs/ABCdeZ.jl`). It is registered
+[GitHub](https://github.com/mauricelanghinrichs/ABCdeZ.jl). It is registered
 in the Julia General Registry and installable via `] add ABCdeZ`. The package
 provides a user-friendly API, comprehensive documentation and minimal working
 examples for rapid onboarding. For example, the code generating
@@ -119,12 +119,11 @@ maintainability.
 
 ![Minimal example from the ABCdeZ.jl documentation showcasing parameter inference and model comparison. Two models were independently fitted to a dataset, updating posterior parameter distributions from their priors (a). The estimated model evidences were subsequently used to compute posterior model probabilities from an initially uniform model prior (b). Inference results obtained with ABCdeZ.jl are compared with the exact analytical distributions, which can be derived for this minimal example but are generally unavailable in realistic research applications.\label{fig:one}](fig1.png){ width=70% }
 
-The core idea of ABCdeZ.jl is to estimate the evidence separately per model,
-independent of the overall model set. From these model evidences, posterior
-model probabilities and Bayes factors can then be computed for arbitrary
-subsets of analyzed models, allowing new models to be added without recomputing
-previous inferences. In the process, posterior parameter samples are generated
-for each model.
+The core idea of ABCdeZ.jl is to estimate the evidence separately per model, 
+independent of the overall model set. From these model evidences, posterior 
+model probabilities and Bayes factors can then be computed for arbitrary 
+subsets of analyzed models, allowing new models to be added without 
+recomputing previous inferences.
 
 To enable the estimation of model evidences, ABCdeZ.jl implements an ABC-SMC
 framework in which a set of model instances (particles) are simulated in
@@ -141,21 +140,18 @@ To enforce the sequential progress of the sampling distribution towards the
 posterior, ABCdeZ.jl supports flexible distance constraint kernel definitions,
 including an indicator kernel (default) for strict stepwise progress and
 continuous distance kernels for softened progress constraints. Lightweight data
-blobs enable user code to attach arbitraty auxiliary information to particles
+blobs enable user code to attach arbitrary auxiliary information to particles
 throughout inference, including simulation outputs, simulation-to-data
 distances, or other metadata. Efficiency is a core design goal, and care was
-taken to avoid unnecessary memory allocations within the ABC-SMC
-implementation. For the minimal example included in the documentation,
-inference completes in approximately 0.03 seconds, increasing to roughly 0.1
-seconds for a ten-dimensional parameter prior. These results indicate that, for
-realistic applications, the computational cost is dominated by the user-defined
+taken to avoid unnecessary memory allocations within the ABC-SMC implementation. 
+For realistic applications, the computational cost is dominated by the user-defined
 model simulation and distance evaluation rather than by the ABCdeZ.jl framework
 itself. Thread-safe parallelization via `FLoops` enables efficient multi-core
 execution while accommodating fast in-place mutable operations for ABC-distance
 evaluations.
 
 Effective application of ABC methods requires careful design of summary
-statistics and distance functions. To aid researchers in design, ABCdeZ.jl
+statistics and distance functions. To support these applications, ABCdeZ.jl
 provides extensive documentation covering practical aspects of simulation-based
 inference workflows. In addition, the package emphasizes ease of use through a
 simple API centered around a single top-level inference function (`abcdesmc!`).
@@ -169,9 +165,9 @@ ABCdeZ.jl was developed by the authors to address methodological demands
 arising from interdisciplinary research in systems biology. The software
 contributed substantially to two recent research studies [@frank_holistic_2024;
 @ikeda_early_2025], currently under review for publication (as of May 2026).
-The studies exemplify applications of ABCdeZ.jl to inference of lineage
+The studies exemplify applications of ABCdeZ.jl to the inference of lineage
 pathways during tissue development in mammals, where large numbers of distinct
-cell types and functional tissues emerge from common progenitor cell types.
+cell types and functional tissues emerge from common progenitor cells.
 Resolving such lineage pathways requires systematic and scalable model
 comparison, since the number of possible lineage topologies grows
 combinatorially. \autoref{fig:two} illustrates such a workflow for one lineage
