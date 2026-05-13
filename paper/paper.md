@@ -209,4 +209,8 @@ We thank all members of the Division of Theoretical Systems Biology at the
 German Cancer Research Center for testing and using ABCdeZ.jl, thereby
 providing valuable feedback for previous releases of ABCdeZ.jl.
 
+M.L. was supported by the Helmholtz Graduate School for Cancer Research fellowship. 
+T.H. was supported by the Sonderforschungsbereich (SFB 873-B11) of the Deutsche Forschungsgemeinschaft. 
+M.L., T.H. and N.B.B. were supported by core funding from the German Cancer Research Center.
+
 # References
