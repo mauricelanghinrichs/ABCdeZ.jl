@@ -111,7 +111,7 @@ the documentation and repository. ABCdeZ.jl uses automated continuous
 integration (CI) workflows for testing, documentation deployment, and test
 coverage reporting. The test suite (`] test ABCdeZ`) achieves 98% coverage
 (based on Codecov) within the CI workflow. The package depends only on widely 
-used and established Julia libraries `Random`, `Distributions`,
+used and established Julia libraries `Random`, `Distributions` [@besancon_distributionsjl_2021],
 `StatsBase` and `FLoops`, keeping external dependencies minimal to ensure ease
 of installation and long-term maintainability.
 
