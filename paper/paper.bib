@@ -305,6 +305,40 @@
   url          = {https://doi.org/10.5281/zenodo.18225767},
 }
 
+@software{brian_groenke_2026_19536417,
+  author       = {Brian Groenke and
+                  Kristoffer Aalstad and
+                  Zhe (Jessica)},
+  title        = {bgroenks96/SimulationBasedInference.jl},
+  month        = apr,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v0.2.1},
+  doi          = {10.5281/zenodo.19536417},
+  url          = {https://doi.org/10.5281/zenodo.19536417},
+  swhid        = {swh:1:dir:73bc3c33eb5fd8c4710c499ecb4e29c8d00fac14
+                   ;origin=https://doi.org/10.5281/zenodo.14826608;vi
+                   sit=swh:1:snp:c109608b82ebe442324c63d23035b36219e2
+                   4dcc;anchor=swh:1:rel:1c3497e6427fff52a3f6133804a8
+                   4ee1325afb77;path=bgroenks96-SimulationBasedInfere
+                   nce.jl-0c07986
+                  },
+}
+
+@misc{albert_thermodynamic_2025,
+	title = {A thermodynamic approach to Approximate Bayesian Computation with multiple summary statistics},
+	rights = {Creative Commons Attribution 4.0 International},
+	url = {https://arxiv.org/abs/2505.23261},
+	doi = {10.48550/ARXIV.2505.23261},
+	abstract = {Bayesian inference with stochastic models is often difficult because their likelihood functions involve high-dimensional integrals. Approximate Bayesian Computation ({ABC}) avoids evaluating the likelihood function and instead infers model parameters by comparing model simulations with observations using a few carefully chosen summary statistics and a tolerance that can be decreased over time. Here, we present a new variant of simulated-annealing {ABC} algorithms, drawing intuition from non-equilibrium thermodynamics. We associate each summary statistic with a state variable (energy) quantifying its distance from the observed value, as well as a temperature that controls the extent to which the statistic contributes to the posterior. We derive an optimal annealing schedule on a Riemannian manifold of state variables based on a minimal-entropy-production principle. We validate our approach on standard benchmark tasks from the simulation-based inference literature as well as on challenging real-world inference problems, and show that it is highly competitive with the state of the art.},
+	publisher = {{arXiv}},
+	author = {Albert, Carlo and Ulzega, Simone and Dirmeier, Simon and Scheidegger, Andreas and Bassi, Alberto and Mira, Antonietta},
+	urldate = {2026-05-13},
+	date = {2025},
+	note = {Version Number: 3},
+	keywords = {Computation (stat.{CO}), {FOS}: Computer and information sciences},
+}
+
 @misc{JuliaFolds2,
   author = {Takafumi Arakaki and 
 			{JuliaFolds contributors} and 
@@ -314,4 +348,23 @@
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/JuliaFolds2/FLoops.jl}},
+}
+
+@misc{kissabc,
+  author = {Francesco Alemanno and 
+			{KissABC.jl contributors}},
+  title = {{KissABC.jl}: Pure Julia implementation of Multiple Affine Invariant Sampling for efficient Approximate Bayesian Computation},
+  year = {2020},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/francescoalemanno/KissABC.jl}},
+}
+
+@misc{williams_approxbayes_2020,
+  author       = {Marc Williams and {ApproxBayes.jl contributors}},
+  title        = {{ApproxBayes.jl}: Approximate Bayesian Computation (ABC) algorithms for likelihood-free inference in Julia},
+  year         = {2020},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/marcjwilliams1/ApproxBayes.jl}},
 }

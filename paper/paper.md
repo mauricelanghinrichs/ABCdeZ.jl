@@ -74,9 +74,9 @@ associated with posterior particles after inference.
 
 Several Approximate Bayesian Computation implementations exist in Julia, 
 providing tools for parameter inference, 
-including [ApproxBayes.jl](https://github.com/marcjwilliams1/ApproxBayes.jl), 
-[SimulationBasedInference.jl](https://github.com/bgroenks96/SimulationBasedInference.jl), 
-[SimulatedAnnealingABC.jl](https://github.com/Eawag-SIAM/SimulatedAnnealingABC.jl) 
+including [ApproxBayes.jl](https://github.com/marcjwilliams1/ApproxBayes.jl) [@williams_approxbayes_2020], 
+[SimulationBasedInference.jl](https://github.com/bgroenks96/SimulationBasedInference.jl) [@brian_groenke_2026_19536417], 
+[SimulatedAnnealingABC.jl](https://github.com/Eawag-SIAM/SimulatedAnnealingABC.jl) [@albert_thermodynamic_2025]
 and [GpABC.jl](https://github.com/tanhevg/GpABC.jl) 
 [@tankhilevich_gpabc_2020]. 
 In some cases, model comparison is also implemented via rejection, Markov 
@@ -199,7 +199,7 @@ materials.
 
 # Acknowledgements
 
-We thank Francesco Alemanno, author of the package [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl), 
+We thank Francesco Alemanno, author of the package [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [@kissabc], 
 now publicly archived, for helpful correspondence and for the development of that package, 
 parts of whose code base were used as a starting point 
 for ABCdeZ.jl. In accordance with the original licensing terms, 
