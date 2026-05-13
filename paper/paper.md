@@ -112,8 +112,9 @@ integration (CI) workflows for testing, documentation deployment, and test
 coverage reporting. The test suite (`] test ABCdeZ`) achieves 98% coverage
 (based on Codecov) within the CI workflow. The package depends only on widely 
 used and established Julia libraries `Random`, `Distributions` [@besancon_distributionsjl_2021],
-`StatsBase` and `FLoops`, keeping external dependencies minimal to ensure ease
-of installation and long-term maintainability.
+`StatsBase` [@dahua_lin_2026_18225767] and `FLoops` [@JuliaFolds2], 
+keeping external dependencies minimal to ensure ease of installation 
+and long-term maintainability.
 
 ![Minimal example from the ABCdeZ.jl documentation showcasing parameter inference and model comparison. Two models were independently fitted to a dataset, updating posterior parameter distributions from their priors (a). The estimated model evidences were subsequently used to compute posterior model probabilities from an initially uniform model prior (b). Inference results obtained with ABCdeZ.jl are compared with the exact analytical distributions, which can be derived for this minimal example but are generally unavailable in realistic research applications.\label{fig:one}](fig1.png){ width=70% }
 
