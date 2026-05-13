@@ -172,7 +172,7 @@ functional tissues emerge from common progenitor cell types. Resolving such line
 pathways requires systematic and scalable model comparison, since the number of possible 
 lineage topologies grows combinatorially. \autoref{fig:two} illustrates such a 
 workflow for one lineage topology with three terminal cell types (A, B, C). In 
-[@frank_holistic_2024], a systematic investigation of 86 distinct models was 
+@frank_holistic_2024, a systematic investigation of 86 distinct models was 
 performed, representing a scale of model comparison that would be 
 computationally demanding with ABC workflows requiring joint 
 inference across all candidate models. By enabling per-model evidence 
