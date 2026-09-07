@@ -5,6 +5,10 @@
 
 using ABCdeZ
 using Distributions
+using Random
+
+### fixed seed for random stream
+Random.seed!(1234)
 
 ### data
 data = 3
@@ -120,3 +124,38 @@ plot!([0.35, 0.65], [mposterior1_exact, mposterior1_exact], lw=2.0, c=:red,
     label="Posterior (exact)")
 plot!([1.35, 1.65], [mposterior2_exact, mposterior2_exact], lw=2.0, c=:red,
     label=nothing)
+
+### reproducibility
+# NOTE: to check reproducibility via exact numerical results in the 
+# above example, one can check the following output with the output 
+# pasted in the comments below. As the ABC runs are stochastic, the 
+# results depend on the random seed (fixed in the beginning) and 
+# the number of threads used (for parallelisation), and possibly 
+# Julia version and operating platform. So if you see a deviation 
+# from the below output, it does not mean that the package is not 
+# working properly, but that the above points are likely not met.
+Threads.nthreads()
+# 12 threads
+
+versioninfo()
+# Julia Version 1.12.6
+# Commit 15346901f00 (2026-04-09 19:20 UTC)
+# Build Info:
+#   Official https://julialang.org release
+# Platform Info:
+#   OS: macOS (arm64-apple-darwin24.0.0)
+#   CPU: 16 × Apple M4 Max
+#   WORD_SIZE: 64
+#   LLVM: libLLVM-18.1.7 (ORCJIT, apple-m4)
+#   GC: Built with stock GC
+# Threads: 12 default, 1 interactive, 12 GC (on 12 virtual cores)
+# Environment:
+#   JULIA_EDITOR = code
+#   JULIA_VSCODE_REPL = 1
+#   DYLD_FALLBACK_LIBRARY_PATH = [...]
+
+@info (mean_posterior1=mean(posterior1), mean_posterior2=mean(posterior2))
+# [ Info: (mean_posterior1 = 2.731063661395506, mean_posterior2 = 2.9561634694410808)
+
+@info (mposterior1=mposterior1, mposterior2=mposterior2)
+# [ Info: (mposterior1 = 0.6631875228095595, mposterior2 = 0.3368124771904405)
