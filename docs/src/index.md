@@ -71,7 +71,7 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 
 ## Installation
 
-You need a working installation of [Julia](https://julialang.org). Then enter the Pkg REPL by pressing ``]`` from the Julia REPL and install ABCdeZ.jl by ``add ABCdeZ``. To get back to the Julia REPL after installation, press Ctrl+C or backspace (when the REPL cursor is at the beginning of the input).
+You need a working installation of [Julia](https://julialang.org). Then enter the Pkg REPL by pressing ```]``` from the Julia REPL and install ABCdeZ.jl by executing ```add ABCdeZ```. To get back to the Julia REPL after installation, press ```Ctrl+C``` or ```backspace``` (when the REPL cursor is at the beginning of the input).
 
 ## Minimal example
 
