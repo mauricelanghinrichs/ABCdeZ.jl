@@ -327,6 +327,31 @@ Models should be compared based on evidence values computed for the *same* final
     blobs = r.blobs[r.Wns .> 0.0]
     ```
 
+## Community guidelines
+
+We welcome contributions, bug reports, and questions from the community. All interaction takes place through the project's [GitHub repository](https://github.com/mauricelanghinrichs/ABCdeZ.jl).
+
+#### Contributing to the software
+
+Contributions such as bug fixes, new features, and documentation improvements are welcome via pull requests:
+
+1. Fork the repository and create a new branch for your changes.
+2. Make your changes, adding tests and documentation where appropriate.
+3. Make sure all existing tests pass.
+4. Open a pull request [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/pulls) with a clear
+   description of what you changed and why.
+
+For larger changes, please open an issue first to discuss the proposed change.
+
+#### Reporting issues or problems
+
+If you find a bug or unexpected behaviour, please open an issue [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/issues). Include a short description of the problem, a minimal example that reproduces it, the error message (if any), and the versions of the package and your operating system.
+
+#### Seeking support
+
+If you have questions about using the software, please open an issue [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/issues) and describe what you are trying to achieve. We aim to respond as soon as possible.
+
+
 ## References
 
 - Some part of the code was copied, adapted and/or inspired by KissABC.jl [^1]. For example, 
