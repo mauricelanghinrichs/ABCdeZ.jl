@@ -69,6 +69,10 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 - If you *can* calculate the likelihood function for your models, make use of it. Instead of ABC, consider likelihood-based inference methods.
 - Please be aware of the **caveats of ABC**, particular for model comparison/selection. ABC is approximative and may lead to wrong/misleading results if not applied carefully (see [here](#ABC-Approximations) for more).
 
+## Installation
+
+You need a working installation of [Julia](https://julialang.org). Then enter the Pkg REPL by pressing ``]`` from the Julia REPL and install ABCdeZ.jl by ``add ABCdeZ``. To get back to the Julia REPL after installation, press Ctrl+C or backspace (when the REPL cursor is at the beginning of the input).
+
 ## Minimal example
 
 Here we will use ABCdeZ.jl to infer the model evidences and posterior distributions within a simple toy example. The models have a single parameter ``θ`` that is, *a priori*, normally distributed (prior). After seeing one single data point, we obtain an updated posterior knowledge. To obtain model evidences, next to the posterior samples, we will use the [```abcdesmc!```](#Inference-by-abcdesmc!) method; for posterior samples only one may also use ```abcdemc!``` with a very similar syntax (as seen [here](#Inference-by-abcdemc!)).
