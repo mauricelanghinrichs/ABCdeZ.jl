@@ -189,10 +189,10 @@ useful in other research domains relying on likelihood-free inference.
 
 # AI usage disclosure
 
-Generative AI tools were used to improve grammar, readability and phrasing of
-the manuscript. No generative AI tools were used in the development of the
-software, the writing of this manuscript, or the preparation of supporting
-materials.
+Generative AI tools were used only to improve the grammar, readability, and 
+phrasing of the manuscript. No generative AI tools were used in the development 
+of the software, the drafting of the initial manuscript, or the preparation 
+of supporting materials.
 
 
 # Acknowledgements
