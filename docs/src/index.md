@@ -69,6 +69,14 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 - If you *can* calculate the likelihood function for your models, make use of it. Instead of ABC, consider likelihood-based inference methods.
 - Please be aware of the **caveats of ABC**, particular for model comparison/selection. ABC is approximative and may lead to wrong/misleading results if not applied carefully (see [here](#ABC-Approximations) for more).
 
+## Relation to other software
+
+Several ABC implementations exist in Julia that provide tools for parameter inference, for example [ApproxBayes.jl](https://github.com/marcjwilliams1/ApproxBayes.jl), [SimulationBasedInference.jl](https://github.com/bgroenks96/SimulationBasedInference.jl), [SimulatedAnnealingABC.jl](https://github.com/Eawag-SIAM/SimulatedAnnealingABC.jl) and [GpABC.jl](https://github.com/tanhevg/GpABC.jl). Some of them also implement model comparison via rejection, MCMC or SMC methods. Packages such as ApproxBayes.jl or GpABC.jl estimate posterior model probabilities directly through model-swapping Monte Carlo moves, without estimating the evidence of each model individually; a similar procedure is used by [pyABC](https://github.com/ICB-DCM/pyABC), a popular ABC package for Python.
+
+These approaches require all candidate models to be included in a single joint inference run. Model comparison is then tied to a fixed set of models, and adding or removing a model requires recomputing the full inference. ABCdeZ.jl instead estimates the evidence of each model separately, so that posterior model probabilities or Bayes factors can be computed later for any subset of analysed models (see also "Why ABCdeZ.jl?" above).
+
+ABCdeZ.jl builds on [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [^1] (now archived), parts of whose code base were used as a starting point (see [References](#References)).
+
 ## Installation
 
 You need a working installation of [Julia](https://julialang.org). Then enter the Pkg REPL by pressing ```]``` from the Julia REPL and install ABCdeZ.jl by executing ```add ABCdeZ```. To get back to the Julia REPL after installation, press ```Ctrl+C``` or ```backspace``` (when the REPL cursor is at the beginning of the input).
