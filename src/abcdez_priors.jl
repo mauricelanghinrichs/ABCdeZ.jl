@@ -48,7 +48,16 @@ end
 """
     rand(rng::AbstractRNG, factoreddist::Factored)
 
-Function to sample one element from a `Factored` object.
+Function to draw one sample from a `Factored` distribution, returned as a tuple
+with one value per contained (univariate) distribution.
+
+# Examples
+```julia-repl
+julia> using ABCdeZ, Distributions;
+julia> prior = Factored(Normal(0, 1), DiscreteUniform(1, 5));
+julia> rand(prior)
+(0.06423613735728075, 2)
+```
 """
 rand(rng::AbstractRNG, factoreddist::Factored{N}) where {N} =
     ntuple(i -> rand(rng, factoreddist.p[i]), Val(N))
