@@ -154,7 +154,7 @@ end
 
 ### main smc
 """
-    abcdesmc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>)
+    abcdesmc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>) -> NamedTuple
 
 Run ABC with diffential evolution (de) moves in a Sequential Monte Carlo setup (smc) 
 providing posterior samples and a model evidence estimate.
@@ -198,6 +198,36 @@ The particles have to be weighted (via `r.Wns`) for valid posterior samples.
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
     thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
     thread-safe (true by default).
+
+# Returns
+A `NamedTuple` `r` with the following fields (each per-particle vector has length `nparticles`):
+- `P`: final parameter values of all particles; each entry has the same format as a
+    draw from `prior` (e.g., a number for a univariate `Distribution`, a tuple for a
+    `Factored` prior), with discrete prior components given as integers.
+- `Wns::Vector{Float64}`: normalised particle weights (summing to one); dead particles have
+    weight `0.0`. Weighted particles are posterior samples, e.g. `r.P[r.Wns .> 0.0]` for
+    the default indicator kernel, where all alive particles have equal weight.
+- `C::Vector{Float64}`: final distance values (as returned by `dist!`) of all particles.
+- `ϵ::Float64`: final ϵ (ABC kernel width) reached by the algorithm; equals `ϵ_target`
+    unless the algorithm stopped early due to `nsims_max` or `facc_stop`.
+- `logZ::Float64`: estimate of the logarithmic model evidence at the final `ϵ`
+    (use `exp(r.logZ)` for the evidence).
+- `blobs::Vector`: blobs (second output of `dist!`) of all particles, aligned with `P`.
+
+If `verboseout=true`, the following fields are added, each recording one value per SMC
+iteration (the first entry refers to the initial prior particles, before any iteration):
+- `ϵs::Vector{Float64}`: ϵ values of the sequential target distributions (first entry `Inf`).
+- `ranges_ϵ::Vector{Tuple}`: `(minimum, maximum)` of the particle distances at the end of each iteration.
+- `logZs::Vector{Float64}`: logarithmic evidence estimates for each ϵ in `ϵs` (first entry `0.0`);
+    can be used to compare models at a common ϵ.
+- `esss::Vector{Float64}`: effective sample sizes of the particle population (after a
+    resampling step, if one was performed).
+- `faccs::Vector{Float64}`: fractions of accepted MCMC proposals among alive particles
+    (first entry `1.0`).
+- `γ0s::Vector{Float64}`: jump distance scales `γ0` of the differential evolution proposals
+    (reduced by `facc_tune` whenever `facc` drops below `facc_min`).
+- `Kmcmcs::Vector{Int}`: number of MCMC steps actually performed (at most `Kmcmc`, fewer
+    on an early exit due to `Kmcmc_min`).
 
 # Examples
 ```julia-repl
