@@ -117,7 +117,7 @@ depends only on widely used and established Julia libraries `Random`,
 dependencies minimal to ensure ease of installation and long-term
 maintainability.
 
-![Minimal example from the ABCdeZ.jl documentation showcasing parameter inference and model comparison. Two models were independently fitted to a dataset, updating posterior parameter distributions from their priors (a). The estimated model evidences were subsequently used to compute posterior model probabilities from an initially uniform model prior (b). Inference results obtained with ABCdeZ.jl are compared with the exact analytical distributions, which can be derived for this minimal example but are generally unavailable in realistic research applications.\label{fig:one}](fig1.png){ width=70% }
+![Minimal example from the ABCdeZ.jl documentation showcasing parameter inference and model comparison. Two models were independently fitted to a dataset, updating posterior parameter distributions from their priors (a). The estimated model evidences were subsequently used to compute posterior model probabilities from an initially uniform model prior (b). Inference results obtained with ABCdeZ.jl are compared with the exact analytical distributions, which can be derived for this minimal example but are generally unavailable in realistic research applications.\label{fig:one}](fig1.png){ width=73% }
 
 The core idea of ABCdeZ.jl is to estimate the evidence separately per model, 
 independent of the overall model set. From these model evidences, posterior 
@@ -184,7 +184,7 @@ comparison for simulation-based Bayesian inference. While motivated by systems
 biology applications, ABCdeZ.jl is a general-purpose framework that may prove
 useful in other research domains relying on likelihood-free inference.
 
-![Representative workflow of ABCdeZ.jl adapted from a recent research application [@frank_holistic_2024]. ABCdeZ.jl enables inference of mechanistic processes underlying complex experimental data by combining generative forward simulations with large-scale and systematic model comparison. The framework estimates posterior parameter distributions and model evidences, from which posterior model probabilities can be derived to identify the most plausible explanatory processes underlying the observed data.\label{fig:two}](fig2.png){ width=90% }
+![Representative workflow of ABCdeZ.jl adapted from a recent research application [@frank_holistic_2024]. ABCdeZ.jl enables inference of mechanistic processes underlying complex experimental data by combining generative forward simulations with large-scale and systematic model comparison. The framework estimates posterior parameter distributions and model evidences, from which posterior model probabilities can be derived to identify the most plausible explanatory processes underlying the observed data.\label{fig:two}](fig2.png){ width=93% }
 
 
 # AI usage disclosure
