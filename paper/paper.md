@@ -113,7 +113,7 @@ deployment, and test coverage reporting. The test suite (`] test ABCdeZ`)
 achieves 98% coverage (based on Codecov) within the CI workflow. The package
 depends only on widely used and established Julia libraries `Random`,
 `Distributions` [@besancon_distributionsjl_2021], `StatsBase`
-[@dahua_lin_2026_18225767] and `FLoops` [@JuliaFolds2], keeping external
+[@dahua_lin_2026_18225767], and `FLoops` [@JuliaFolds2], keeping external
 dependencies minimal to ensure ease of installation and long-term
 maintainability.
 
@@ -129,7 +129,7 @@ To enable the estimation of model evidences, ABCdeZ.jl implements an ABC-SMC
 framework in which a set of model instances (particles) are simulated in
 parallel. Particle weights are tracked [@didelot_likelihood-free_2011;
 @del_moral_adaptive_2012], following weight assignments analogous to those used
-in likelihood-based SMC inference (e.g., @amaya_adaptive_2021). As SMC
+in likelihood-based SMC inference, e.g., @amaya_adaptive_2021. As SMC
 algorithms handle complex multimodal parameter landscapes well
 [@neal_annealed_2001; @del_moral_sequential_2006], high-quality posterior
 parameter samples are obtained alongside the evidence estimation. The algorithm
