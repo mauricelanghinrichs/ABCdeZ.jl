@@ -69,6 +69,18 @@ Both methods make differential evolution (**de**) proposals for the MCMC (Markov
 - If you *can* calculate the likelihood function for your models, make use of it. Instead of ABC, consider likelihood-based inference methods.
 - Please be aware of the **caveats of ABC**, particular for model comparison/selection. ABC is approximative and may lead to wrong/misleading results if not applied carefully (see [here](#ABC-Approximations) for more).
 
+## Relation to other software
+
+Several ABC implementations exist in Julia that provide tools for parameter inference, for example [ApproxBayes.jl](https://github.com/marcjwilliams1/ApproxBayes.jl), [SimulationBasedInference.jl](https://github.com/bgroenks96/SimulationBasedInference.jl), [SimulatedAnnealingABC.jl](https://github.com/Eawag-SIAM/SimulatedAnnealingABC.jl) and [GpABC.jl](https://github.com/tanhevg/GpABC.jl). Some of them also implement model comparison via rejection, MCMC or SMC methods. Packages such as ApproxBayes.jl or GpABC.jl estimate posterior model probabilities directly through model-swapping Monte Carlo moves, without estimating the evidence of each model individually; a similar procedure is used by [pyABC](https://github.com/ICB-DCM/pyABC), a popular ABC package for Python.
+
+These approaches require all candidate models to be included in a single joint inference run. Model comparison is then tied to a fixed set of models, and adding or removing a model requires recomputing the full inference. ABCdeZ.jl instead estimates the evidence of each model separately, so that posterior model probabilities or Bayes factors can be computed later for any subset of analysed models (see also "Why ABCdeZ.jl?" above).
+
+ABCdeZ.jl builds on [KissABC.jl](https://github.com/francescoalemanno/KissABC.jl) [^1] (now archived), parts of whose code base were used as a starting point (see [References](#References)).
+
+## Installation
+
+You need a working installation of [Julia](https://julialang.org). Then enter the Pkg REPL by pressing ```]``` from the Julia REPL and install ABCdeZ.jl by executing ```add ABCdeZ```. To get back to the Julia REPL after installation, press ```Ctrl+C``` or ```backspace``` (when the REPL cursor is at the beginning of the input).
+
 ## Minimal example
 
 Here we will use ABCdeZ.jl to infer the model evidences and posterior distributions within a simple toy example. The models have a single parameter ``θ`` that is, *a priori*, normally distributed (prior). After seeing one single data point, we obtain an updated posterior knowledge. To obtain model evidences, next to the posterior samples, we will use the [```abcdesmc!```](#Inference-by-abcdesmc!) method; for posterior samples only one may also use ```abcdemc!``` with a very similar syntax (as seen [here](#Inference-by-abcdemc!)).
@@ -322,6 +334,31 @@ Models should be compared based on evidence values computed for the *same* final
     evidence = exp(r.logZ)
     blobs = r.blobs[r.Wns .> 0.0]
     ```
+
+## Community guidelines
+
+We welcome contributions, bug reports, and questions from the community. All interaction takes place through the project's [GitHub repository](https://github.com/mauricelanghinrichs/ABCdeZ.jl).
+
+#### Contributing to the software
+
+Contributions such as bug fixes, new features, and documentation improvements are welcome via pull requests:
+
+1. Fork the repository and create a new branch for your changes.
+2. Make your changes, adding tests and documentation where appropriate.
+3. Make sure all existing tests pass.
+4. Open a pull request [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/pulls) with a clear
+   description of what you changed and why.
+
+For larger changes, please open an issue first to discuss the proposed change.
+
+#### Reporting issues or problems
+
+If you find a bug or unexpected behaviour, please open an issue [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/issues). Include a short description of the problem, a minimal example that reproduces it, the error message (if any), and the versions of the package and your operating system.
+
+#### Seeking support
+
+If you have questions about using the software, please open an issue [here](https://github.com/mauricelanghinrichs/ABCdeZ.jl/issues) and describe what you are trying to achieve. We aim to respond as soon as possible.
+
 
 ## References
 

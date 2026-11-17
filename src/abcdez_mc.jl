@@ -61,7 +61,7 @@ function abcdemc_swarm!(prior, dist!, varexternal, θs, logπ, Δs, nθs, nlogπ
 end
 
 """
-    abcdemc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>)
+    abcdemc!(prior, dist!, ϵ_target, varexternal; <keyword arguments>) -> NamedTuple
 
 Run ABC with diffential evolution (de) moves in a Markov chain Monte Carlo setup (mc) 
 providing posterior samples.
@@ -86,6 +86,18 @@ Algorithm needs to converge for an unbiased posterior estimate.
 - `parallel::Bool=false`: if set to `true`, threaded parallelism is enabled; `dist!` must be 
     thread-safe in such a case, e.g. by making use of `varexternal` (`ve`); also `rng` must be 
     thread-safe (true by default).
+
+# Returns
+A `NamedTuple` `r` with the following fields (each per-particle vector has length `nparticles`):
+- `P`: final parameter values of all particles; each entry has the same format as a
+    draw from `prior` (e.g., a number for a univariate `Distribution`, a tuple for a
+    `Factored` prior), with discrete prior components given as integers. If `r.reached_ϵ`
+    is `true`, these are (unweighted) samples from the approximate posterior.
+- `C::Vector{Float64}`: final distance values (as returned by `dist!`) of all particles.
+- `reached_ϵ::Bool`: `true` if all particles have a distance `≤ ϵ_target` after the last
+    generation; if `false`, the algorithm has not converged and `P` should not be regarded as
+    proper posterior samples.
+- `blobs::Vector`: blobs (second output of `dist!`) of all particles, aligned with `P`.
 
 # Examples
 ```julia-repl
