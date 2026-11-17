@@ -12,13 +12,14 @@ tags:
 authors:
   - name: Maurice Langhinrichs
     orcid: 0000-0001-8529-5749
+    corresponding: true # (This is how to denote the corresponding author)
     affiliation: 1 # "1, 2" # (Multiple affiliations must be quoted)
   - name: Thomas Höfer
     orcid: 0000-0003-3560-8780
     affiliation: 1
   - name: Nils B. Becker
     orcid: 0000-0002-7490-6425
-    corresponding: true # (This is how to denote the corresponding author)
+    corresponding: true
     affiliation: 1
 affiliations:
  - name: Division of Theoretical Systems Biology, German Cancer Research Center, Heidelberg 69120, Germany
